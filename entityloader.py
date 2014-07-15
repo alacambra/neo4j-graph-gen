@@ -20,13 +20,35 @@ def create_nodes(total, type):
             query += "CREATE (n" + str(i) + ":" + type + \
                      ":UUID {" \
                      "privacy:" + str(i%4!=0).lower() + ", " \
-                     "uuid:" + str(time.clock()) + "," \
-                                                   "name:'albert'," \
-                                                   "connectivity:'something'," \
-                                                   "tuPichaLoca:'atributeado'})\n"
+                                                        "uuid1:" + str(time.clock()) + "," \
+                                                                                      "name:'albert'," \
+                                                                                      "connectivity:'something'," \
+                                                                                      "tuPichaLoca:'atributeado'})\n"
 
         i += 1;
 
+    execute(query)
+
+
+def create_channel(total):
+
+    query = "";
+    step = 25;
+
+    for i in range(0, total):
+        # if i%step == 0 and i != 0:
+        #     execute(query)
+        #     query = ""
+        # else:
+        query += "CREATE (n" + str(i) + ":channel" \
+                 ":UUID {" \
+                 "privacy:" + str(i%4!=0).lower() + ", " \
+                                                    "uuid1:" + str(i) + "," \
+                                                                                   "name:'albert'," \
+                                                                                   "connectivity:'something'," \
+                                                                                   "tuPichaLoca:'atributeado'})\n"
+        if i > 0:
+            query += "CREATE (n" + str(i-1) + ")-[:NEXT]->(n" + str(i) + ")\n"
     execute(query)
 
 
@@ -36,10 +58,11 @@ def clear_all():
 
 
 def execute(query):
-    a = cursor.execute(query)
+    cursor.execute(query)
     connection.commit()
     print query
 
 
 if __name__ == "__main__":
     print "hello"
+    create_channel(300)
