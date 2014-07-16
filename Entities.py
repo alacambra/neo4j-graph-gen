@@ -41,7 +41,7 @@ class Channel:
 
     def get_query(self):
         ref = "CH" + str(self.counter)
-        query = "CREATE (" + ref + ":CHANNEL: " \
+        query = "CREATE (" + ref + ":CHANNEL " \
                 "{time: " + get_time_as_str() + "})"
 
         self.counter += self.counter;
@@ -100,6 +100,13 @@ class Task:
 
 
 if __name__ == "__main__":
+
+    channel = Channel()
+    print channel.get_query();
+
+    # for i in range(0, 100):
+
+
     p = User()
     print p.get_query()
     print p.get_query()
