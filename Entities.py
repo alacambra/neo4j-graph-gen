@@ -30,7 +30,7 @@ class ChannelItem:
 
         query = "CREATE (" + ref + ":" + item_type + " " \
                 "{time: " + get_time_as_str() + ", type:'" + item_type + "'" \
-                ", uuid:'" + str(uuid.uuid4()) + "'})\n"
+                ", UUID:'" + str(uuid.uuid4()) + "'})\n"
 
         query += self.task_gen.get_query()
         query += self.channel_item_rel_gen.refer_bce_to_item(ref, self.task_gen.last_ref)
@@ -52,7 +52,7 @@ class Channel:
         ref = "CH" + str(self.counter)
         query = "CREATE (" + ref + ":CHANNEL " \
                 "{time: " + get_time_as_str() + "" \
-                ", uuid:'" + str(uuid.uuid4()) + "'})\n"
+                ", UUID:'" + str(uuid.uuid4()) + "'})\n"
 
 
         self.counter += 1;
@@ -72,7 +72,7 @@ class User:
         ref = "U" + str(self.counter)
         query = "CREATE (" + ref + ":USER " \
                 "{time:" + get_time_as_str() + \
-                ", uuid:'" + str(uuid.uuid4()) + "'" \
+                ", UUID:'" + str(uuid.uuid4()) + "'" \
                 ", name:'username" + get_random_str() + "'"\
                 ", occupation:'ocupation" + get_random_str() + "'"\
                 ", private:" + str(True).lower() + \
@@ -98,7 +98,7 @@ class Task:
         query = "CREATE (" + ref + ":TASK " + \
                 "{time:" + get_time_as_str() + \
                 ", name: 'task" + get_random_str() + "'" \
-                ", uuid:'" + str(uuid.uuid4()) + "'" \
+                ", UUID:'" + str(uuid.uuid4()) + "'" \
                 ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'" \
                 ", location:'some place'" \
                 ", private:" + str(True).lower() + \

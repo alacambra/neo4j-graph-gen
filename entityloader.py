@@ -68,7 +68,14 @@ def create_channel(total_items = 10):
 
     second_item = None
 
+    step = 500
+
     for i in range(0, total_items - 1):
+
+        if i%step == 0 and i != 0:
+            print "-"*50 + str(i)
+            execute(query)
+            query = ""
 
         if second_item is not None:
             first_item = second_item
@@ -80,25 +87,38 @@ def create_channel(total_items = 10):
 
     query += channel_items_rel_gen.set_last_item(channel_ref, second_item)
 
+    print "-"*50 + str(i)
     execute(query)
 
 
 
 def clear_all():
-    query = "MATCH n, OPTIONAL MATCH n-[r]-m DELETE r, n"
-    cursor.execute(query)
-    connection.commit()
+    query = "MATCH n return count(n) as total"
+    result = cursor.execute(query)
+
+    (total, ) = result.next()
+
+    step = 50
+
+    for i in range(0, total, step):
+        print i
+        query = "MATCH n with n LIMIT " + str(step) + " OPTIONAL MATCH n-[r]-m-[o]-() with o,r,n,m DELETE o,r, n, m"
+        print query
+        cursor.execute(query)
+        connection.commit()
+
+
+
 
 def execute(query):
     if execution:
         cursor.execute(query)
         connection.commit()
 
-    print query
+    # print query
 
 
 if __name__ == "__main__":
     print "hello"
     # clear_all();
-    # create_channel(2)
-    create_channel(25)
+    create_channel(20)
