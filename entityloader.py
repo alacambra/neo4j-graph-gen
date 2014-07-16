@@ -20,7 +20,7 @@ def create_nodes(total, type):
             query += "CREATE (n" + str(i) + ":" + type + \
                      ":UUID {" \
                      "privacy:" + str(i%4!=0).lower() + ", " \
-                                                        "uuid1:" + str(time.clock()) + "," \
+                                                        "uuid:`" + str(uuid.uuid4()) + "`," \
                                                                                       "name:'albert'," \
                                                                                       "connectivity:'something'," \
                                                                                       "tuPichaLoca:'atributeado'})\n"
@@ -43,7 +43,7 @@ def create_channel(total):
         query += "CREATE (n" + str(i) + ":channel" \
                  ":UUID {" \
                  "privacy:" + str(i%4!=0).lower() + ", " \
-                                                    "uuid1:" + str(i) + "," \
+                                                    "uuid:`" + str(uuid.uuid4()) + "`," \
                                                                                    "name:'albert'," \
                                                                                    "connectivity:'something'," \
                                                                                    "tuPichaLoca:'atributeado'})\n"
@@ -58,11 +58,12 @@ def clear_all():
 
 
 def execute(query):
-    cursor.execute(query)
-    connection.commit()
+    # cursor.execute(query)
+    # connection.commit()
     print query
 
 
 if __name__ == "__main__":
     print "hello"
-    create_channel(300)
+    # clear_all();
+    create_channel(2)
