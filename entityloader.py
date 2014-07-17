@@ -2,57 +2,37 @@ __author__ = 'alacambra'
 import neo4j
 import uuid
 import Entities
+import StringIO
 
 connection = neo4j.connect("http://localhost:7474")
 cursor = connection.cursor()
 execution = True
 
 
-def create_nodes(total, type):
-
-    query = "";
-    step = 25;
-
-    for i in range(0, total):
-
-        if i%step == 0 and i != 0:
-            execute(query)
-            query = ""
-        else:
-            query += "CREATE (n" + str(i) + ":" + type + \
-                     ":UUID {" \
-                     "privacy:" + str(i%4!=0).lower() + ", " \
-                    "uuid:`" + str(uuid.uuid4()) + "`," \
-                    "name:'albert'," \
-                    "connectivity:'something'," \
-                    "tuPichaLoca:'atributeado'})\n"
-
-        i += 1;
-
-    execute(query)
-
-
 def create_channel(total_items=10):
 
     query = ""
+
+    query_builder = StringIO.StringIO()
     glue_query = "match (pl)-[:NEXT]->(last) where not (last)-[:NEXT]->()\n"
     channel_gen = Entities.Channel()
 
     user_gen = Entities.User("CH_O_U")
-    query += user_gen.get_query()
+    query_builder.write(user_gen.get_query())
+    
     channel_creator_ref = user_gen.last_ref
 
-    query += channel_gen.get_query()
+    query_builder.write(channel_gen.get_query())
     channel_ref = channel_gen.last_ref
 
     channel_items_rel_gen = Entities.ChannelItemsRelation()
-    query += channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref);
+    query_builder.write(channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref));
 
     items_gen = Entities.ChannelItem()
-    query += items_gen.create_channel_item()
+    query_builder.write(items_gen.create_channel_item())
     first_item = items_gen.last_ref
 
-    query += channel_items_rel_gen.set_first_item(channel_ref, first_item)
+    query_builder.write(channel_items_rel_gen.set_first_item(channel_ref, first_item))
 
     second_item = None
 
@@ -62,7 +42,9 @@ def create_channel(total_items=10):
 
         if i%step == 0 and i != 0:
             print "-"*50 + str(i)
-            execute(query)
+            execute(query_builder.getvalue())
+            query_builder.close()
+            query_builder = StringIO.StringIO()
             query = glue_query
             second_item = "last"
 
@@ -76,16 +58,16 @@ def create_channel(total_items=10):
         if second_item is not None:
             first_item = second_item
 
-        query += items_gen.create_channel_item("bce" if i % 4 else "container")
+        query_builder.write(items_gen.create_channel_item("bce" if i % 4 else "container"))
         second_item = items_gen.last_ref
 
-        query += channel_items_rel_gen.connect_items(first_item, second_item)
+        query_builder.write(channel_items_rel_gen.connect_items(first_item, second_item))
 
 
-    execute(query)
+    execute(query_builder.getvalue())
     # channel_query = "MATCH (channel: CHANNEL), (pl)-[:NEXT]->(last) where not (last)-[:NEXT]->()\n"
     # query = channel_query
-    # query += channel_items_rel_gen.set_last_item("channel", "last")
+    # query_builder.write(channel_items_rel_gen.set_last_item("channel", "last")
 
     print "-"*50 + str(i)
     # execute(query)

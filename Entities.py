@@ -1,6 +1,7 @@
 __author__ = 'alacambra'
 import time
 import uuid
+import cStringIO as cstr
 
 def get_random_str():
     return get_time_as_str()
@@ -28,6 +29,7 @@ def get_uuid_as_string(name="lala"):#
             id = uuid.uuid4()
 
     return str(id)
+
 
 class ChannelItem:
 
