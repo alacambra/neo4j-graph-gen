@@ -11,28 +11,18 @@ execution = True
 
 def create_channel(total_items=10):
 
-    query = ""
-
     query_builder = StringIO.StringIO()
-    glue_query = "match (pl)-[:NEXT]->(last) where not (last)-[:NEXT]->()\n"
-    channel_gen = Entities.Channel()
+    channel_gen = Entities.Channel(query_builder)
+    channel_items_rel_gen = Entities.ChannelItemsRelation(query_builder)
+    user_gen = Entities.User(query_builder, "CH_O_U")
+    items_gen = Entities.ChannelItem(query_builder)
 
-    user_gen = Entities.User("CH_O_U")
-    query_builder.write(user_gen.get_query())
-    
-    channel_creator_ref = user_gen.last_ref
+    channel_creator_ref = user_gen.create_user()
+    channel_ref, channel_uuid = channel_gen.create_channel()
+    channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref)
 
-    query_builder.write(channel_gen.get_query())
-    channel_ref = channel_gen.last_ref
-
-    channel_items_rel_gen = Entities.ChannelItemsRelation()
-    query_builder.write(channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref));
-
-    items_gen = Entities.ChannelItem()
-    query_builder.write(items_gen.create_channel_item())
-    first_item = items_gen.last_ref
-
-    query_builder.write(channel_items_rel_gen.set_first_item(channel_ref, first_item))
+    first_item, first_channel_item_uuid = items_gen.create_channel_item()
+    channel_items_rel_gen.set_first_item(channel_ref, first_item)
 
     second_item = None
 
@@ -43,9 +33,11 @@ def create_channel(total_items=10):
         if i%step == 0 and i != 0:
             print "-"*50 + str(i)
             execute(query_builder.getvalue())
-            query_builder.close()
-            query_builder = StringIO.StringIO()
-            query = glue_query
+
+            query_builder.truncate(0)
+            query_builder.seek(0)
+
+            query_builder.write("match (last:UUID {UUID:'" + last_channel_item_uuid +"'})")
             second_item = "last"
 
     # So should be the glue
@@ -54,23 +46,24 @@ def create_channel(total_items=10):
     # match (pl)-[:NEXT]->(last) where not (last)-[:NEXT]->()
     # CREATE (last)-[:NEXT]->(CI21)
 
-
         if second_item is not None:
             first_item = second_item
 
-        query_builder.write(items_gen.create_channel_item("bce" if i % 4 else "container"))
-        second_item = items_gen.last_ref
-
-        query_builder.write(channel_items_rel_gen.connect_items(first_item, second_item))
-
+        second_item, last_channel_item_uuid = items_gen.create_channel_item("bce" if i % 4 else "container")
+        channel_items_rel_gen.connect_items(first_item, second_item)
 
     execute(query_builder.getvalue())
-    # channel_query = "MATCH (channel: CHANNEL), (pl)-[:NEXT]->(last) where not (last)-[:NEXT]->()\n"
-    # query = channel_query
-    # query_builder.write(channel_items_rel_gen.set_last_item("channel", "last")
 
+    query_builder.truncate(0)
+    query_builder.seek(0)
+
+    channel_query = "MATCH (channel: UUID {UUID:'" + channel_uuid + "'}), (last:UUID {UUID:'" + last_channel_item_uuid +"'})\n"
+    query_builder.write(channel_query)
+    channel_items_rel_gen.set_last_item("channel", "last")
+
+    i = 0
     print "-"*50 + str(i)
-    # execute(query)
+    execute(query_builder.getvalue())
 
 
 def clear_all():
@@ -84,12 +77,8 @@ def clear_all():
     print str(total) + " nodes to delete:"
     for i in range(0, total, step):
         print " - "*25 + str(i)
-        query = "MATCH n with n LIMIT " + str(step) + " OPTIONAL MATCH n-[r]-m OPTIONAL MATCH m-[o]-() with o,r,n,m delete o, r, n, m"
+        query = "match n with n LIMIT " + str(step) + " optional match n-[r]-() delete r, n"
         execute(query)
-
-        # match n
-        # optional match n-[r]-()
-        # delete r, n
 
 
 def execute(query):
@@ -104,5 +93,5 @@ def execute(query):
 if __name__ == "__main__":
     print "hello"
     # clear_all();
-    # for i in range(0, 10):
-    create_channel(400)
+    for i in range(0, 5):
+        create_channel(250)
