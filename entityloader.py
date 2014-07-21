@@ -83,7 +83,7 @@ def clear_all():
 
 def execute(query):
 
-    print query
+    # print query
 
     if execution:
         cursor.execute(query)
