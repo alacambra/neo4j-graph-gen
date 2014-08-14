@@ -1,7 +1,7 @@
 __author__ = 'alacambra'
 import time
 import uuid
-import StringIO
+
 
 def get_random_str():
     return get_time_as_str()
@@ -74,7 +74,7 @@ class ChannelItem:
             "{time: " + get_time_as_str() + ", type:'" + item_type + "'"
             ", " + Label.uuid + ":'" + used_uuid)
 
-        if "bce" == item_type:
+        if Label.bce == item_type:
             self.query_builder.write("'})\n")
             self.task_gen.create_task()
             self.channel_item_rel_gen.refer_bce_to_item(ref, self.task_gen.last_ref)
@@ -187,7 +187,7 @@ class ChannelItemsRelation:
         self.query_builder.write("CREATE (" + first_ref + ")-[:" + ChannelRelation.item_refers_to_next_item + "]->(" + second_ref + ")\n")
 
     def refer_bce_to_item(self, item_ref, bce_ref):
-        self.query_builder.write("CREATE (" + item_ref + ")-[:" + ChannelRelation.item_refers_to_next_item + "]->(" + bce_ref + ")\n")
+        self.query_builder.write("CREATE (" + item_ref + ")-[:" + ChannelRelation.bce_item_refers_to_object + "]->(" + bce_ref + ")\n")
 
     def set_channel_owner(self, channel_ref, owner_ref):
         self.query_builder.write("CREATE (" + owner_ref + ")-[:" + ChannelRelation.person_owns_channel + "]->(" + channel_ref + ")\n")

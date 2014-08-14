@@ -1,14 +1,10 @@
 __author__ = 'alacambra'
 import neo4j
-import uuid
 import Entities
 import StringIO
 from Entities import Label
 
-
-
-# cursor = connection.cursor()
-execution = True
+execution = False
 
 
 class Connection:
@@ -141,6 +137,6 @@ def execute(query):
 
 if __name__ == "__main__":
     print "hello"
-    clear_all();
+    # clear_all();
     for i in range(0, 1):
-        create_channel(50)
+        create_channel()
