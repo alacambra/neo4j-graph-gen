@@ -4,10 +4,50 @@ import uuid
 import Entities
 import StringIO
 
-connection = neo4j.connect("http://localhost:7474")
-cursor = connection.cursor()
+
+# cursor = connection.cursor()
 execution = True
 
+
+class Connection:
+
+    connection = None
+    cursor = None
+
+    def __init__(self, host="localhost", port=7474):
+        self.host = host
+        self.port = port
+
+    def set_connection_url(self, host, port):
+        self.host = host
+        self.port = port
+        self.create();
+        return self
+
+    def set_connection_port(self, port):
+        self.port = port
+        self.create()
+        return self
+
+    def create(self):
+        if self.connection is not None:
+            self.connection.close()
+
+        self.connection = neo4j.connect("http://" + self.host + ":" + str(self.port));
+        self.cursor = self.connection.cursor()
+        return self
+
+    def commit(self):
+        self.connection.commit();
+
+    def get_cursor(self):
+
+        if self.cursor is None:
+            raise Exception("cursor is not initialized")
+
+        return self.cursor
+
+connection = Connection().create()
 
 def create_channel(total_items=10):
 
@@ -40,12 +80,6 @@ def create_channel(total_items=10):
             query_builder.write("match (last:UUID {UUID:'" + last_channel_item_uuid +"'})")
             second_item = "last"
 
-    # So should be the glue
-    # CREATE (CI21:UUID:container {time: 1405602171, type:'container', UUID:'d8821d67-c409-4d13-9e1d-a3fbdade0423', query_code:'SOME_CODE'})
-    # WITH CI21
-    # match (pl)-[:NEXT]->(last) where not (last)-[:NEXT]->()
-    # CREATE (last)-[:NEXT]->(CI21)
-
         if second_item is not None:
             first_item = second_item
 
@@ -68,17 +102,22 @@ def create_channel(total_items=10):
 
 def clear_all():
     query = "MATCH n return count(n) as total"
-    result = cursor.execute(query)
+    result = connection.get_cursor().execute(query)
 
     (total, ) = result.next()
 
     step = 50
 
     print str(total) + " nodes to delete:"
+    total_removed = 0
     for i in range(0, total, step):
-        print " - "*25 + str(i)
-        query = "match n with n LIMIT " + str(step) + " optional match n-[r]-() delete r, n"
-        execute(query)
+        print " - "*25 + str(total_removed)
+        query = "match n with n LIMIT " + str(step) + " optional match n-[r]-() delete r, n return count(n) as removed"
+        result = execute(query)
+        (removed, ) = result.next()
+        total_removed += removed
+
+    connection.commit()
 
 
 def execute(query):
@@ -86,12 +125,15 @@ def execute(query):
     # print query
 
     if execution:
-        cursor.execute(query)
-        connection.commit()
+        result = connection.get_cursor().execute(query)
+        # connection.commit()
+        return result;
+    else:
+        print query
 
 
 if __name__ == "__main__":
     print "hello"
-    # clear_all();
-    for i in range(0, 5):
-        create_channel(250)
+    clear_all();
+    # for i in range(0, 1):
+    #     create_channel(500)
