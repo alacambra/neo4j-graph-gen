@@ -17,7 +17,6 @@ def get_connectivity_value(seed):
 
 uuids = []
 
-
 def get_uuid_as_string(name="lala"):
     id = uuid.uuid4()
     while True:
@@ -29,6 +28,28 @@ def get_uuid_as_string(name="lala"):
             id = uuid.uuid4()
 
     return str(id)
+
+
+class Label:
+    channel = "channel"
+    uuid = "uuid"
+    user = "people"
+    task = "task"
+    channel_item = "c_item"
+    bce = "bce"
+    container = "container"
+
+
+class ChannelRelation:
+    channel_to_first_item = "has_items"
+    item_refers_to_next_item = "next"
+    bce_item_refers_to_object = "refers_to"
+    person_owns_channel = "owns"
+
+
+class TaskRelation:
+    user_is_creator_of_task = "created_by"
+    user_is_assigned_to_task = "assigned_to"
 
 
 class ChannelItem:
@@ -44,14 +65,14 @@ class ChannelItem:
         self.user_task_rel_gen = UserTaskRelation(query_builder)
         self.query_builder = query_builder
 
-    def create_channel_item(self, item_type="bce"):
+    def create_channel_item(self, item_type=Label.bce):
         ref = "CI" + str(self.counter)
         used_uuid = get_uuid_as_string(ref)
 
         self.query_builder.write(
-            "CREATE (" + ref + ":" + item_type + ":UUID "
+            "CREATE (" + ref + ":" + item_type + ":" + Label.uuid +
             "{time: " + get_time_as_str() + ", type:'" + item_type + "'"
-            ", UUID:'" + used_uuid)
+            ", " + Label.uuid + ":'" + used_uuid)
 
         if "bce" == item_type:
             self.query_builder.write("'})\n")
@@ -85,9 +106,9 @@ class Channel:
         ref = "CH" + str(self.counter)
         used_uuid = get_uuid_as_string(ref)
         self.query_builder.write(
-            "CREATE (" + ref + ":UUID:CHANNEL "
+            "CREATE (" + ref + ":" + Label.uuid + ":" + Label.channel + " "
             "{time: " + get_time_as_str() + ""
-            ", UUID:'" + used_uuid + "'})\n")
+            ", " + Label.uuid + ":'" + used_uuid + "'})\n")
 
         self.counter += 1;
         self.last_ref = ref
@@ -107,9 +128,9 @@ class User:
     def create_user(self):
         ref = self.prefix + str(self.counter)
         self.query_builder.write(
-                "CREATE (" + ref + ":UUID:USER "
+                "CREATE (" + ref + ":"  + Label.uuid + ":" + Label.user + " "
                 "{time:" + get_time_as_str() +
-                ", UUID:'" + get_uuid_as_string(ref) + "'"
+                ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
                 ", name:'username" + get_random_str() + "'"
                 ", occupation:'ocupation" + get_random_str() + "'"
                 ", private:" + str(True).lower() + \
@@ -133,10 +154,10 @@ class Task:
 
     def create_task(self):
         ref = "T" + str(self.counter)
-        self.query_builder.write("CREATE (" + ref + ":UUID:TASK " +
+        self.query_builder.write("CREATE (" + ref + ":" + Label.uuid + ":" + Label.task + " " +
                 "{time:" + get_time_as_str() +
                 ", name: 'task" + get_random_str() + "'"
-                ", UUID:'" + get_uuid_as_string(ref) + "'"
+                ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
                 ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
                 ", location:'some place'"
                 ", private:" + str(True).lower() +
@@ -157,19 +178,19 @@ class ChannelItemsRelation:
         self.query_builder = query_builder
 
     def set_first_item(self, channel_ref, first_item_ref):
-        self.query_builder.write("CREATE (" + channel_ref + ")-[:HAS_ITEMS]->(" + first_item_ref + ")\n")
+        self.query_builder.write("CREATE (" + channel_ref + ")-[:" + ChannelRelation.channel_to_first_item + "]->(" + first_item_ref + ")\n")
 
     def set_last_item(self, channel_ref, last_item_ref):
-        self.query_builder.write("CREATE (" + last_item_ref + ")-[:NEXT]->(" + channel_ref + ")\n")
+        self.query_builder.write("CREATE (" + last_item_ref + ")-[:" + ChannelRelation.item_refers_to_next_item + "]->(" + channel_ref + ")\n")
 
     def connect_items(self, first_ref, second_ref):
-        self.query_builder.write("CREATE (" + first_ref + ")-[:NEXT]->(" + second_ref + ")\n")
+        self.query_builder.write("CREATE (" + first_ref + ")-[:" + ChannelRelation.item_refers_to_next_item + "]->(" + second_ref + ")\n")
 
     def refer_bce_to_item(self, item_ref, bce_ref):
-        self.query_builder.write("CREATE (" + item_ref + ")-[:REFERS_TO]->(" + bce_ref + ")\n")
+        self.query_builder.write("CREATE (" + item_ref + ")-[:" + ChannelRelation.item_refers_to_next_item + "]->(" + bce_ref + ")\n")
 
     def set_channel_owner(self, channel_ref, owner_ref):
-        self.query_builder.write("CREATE (" + owner_ref + ")-[:OWNS]->(" + channel_ref + ")\n")
+        self.query_builder.write("CREATE (" + owner_ref + ")-[:" + ChannelRelation.person_owns_channel + "]->(" + channel_ref + ")\n")
 
 
 class UserTaskRelation:
@@ -178,7 +199,7 @@ class UserTaskRelation:
         self.query_builder = query_builder
 
     def set_creator_of_task(self, task_ref, creator_ref):
-        self.query_builder.write("CREATE (" + task_ref + ")-[:CREATED_BY]->(" + creator_ref + ")\n")
+        self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_creator_of_task + "]->(" + creator_ref + ")\n")
 
     def set_assignee_of_task(self, task_ref, assignee_ref):
-        self.query_builder.write("CREATE (" + task_ref + ")-[:ASSIGNED_TO]->(" + assignee_ref + ")\n")
+        self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_assigned_to_task + "]->(" + assignee_ref + ")\n")

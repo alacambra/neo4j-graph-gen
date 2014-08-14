@@ -3,6 +3,8 @@ import neo4j
 import uuid
 import Entities
 import StringIO
+from Entities import Label
+
 
 
 # cursor = connection.cursor()
@@ -52,6 +54,7 @@ connection = Connection().create()
 def create_channel(total_items=10):
 
     query_builder = StringIO.StringIO()
+
     channel_gen = Entities.Channel(query_builder)
     channel_items_rel_gen = Entities.ChannelItemsRelation(query_builder)
     user_gen = Entities.User(query_builder, "CH_O_U")
@@ -73,31 +76,35 @@ def create_channel(total_items=10):
         if i%step == 0 and i != 0:
             print "-"*50 + str(i)
             execute(query_builder.getvalue())
+            connection.commit()
 
             query_builder.truncate(0)
             query_builder.seek(0)
 
-            query_builder.write("match (last:UUID {UUID:'" + last_channel_item_uuid +"'})")
+            query_builder.write("match (last:" + Label.uuid + " {" + Label.uuid + ":'" + last_channel_item_uuid + "'})")
             second_item = "last"
 
         if second_item is not None:
             first_item = second_item
 
-        second_item, last_channel_item_uuid = items_gen.create_channel_item("bce" if i % 4 else "container")
+        second_item, last_channel_item_uuid = items_gen.create_channel_item(Label.bce if i % 4 else Label.container)
         channel_items_rel_gen.connect_items(first_item, second_item)
 
     execute(query_builder.getvalue())
+    connection.commit()
 
     query_builder.truncate(0)
     query_builder.seek(0)
 
-    channel_query = "MATCH (channel: UUID {UUID:'" + channel_uuid + "'}), (last:UUID {UUID:'" + last_channel_item_uuid +"'})\n"
+    channel_query = "MATCH (channel: " + Label.uuid + " {" + Label.uuid + ":'" + channel_uuid + "'}), (last:" \
+                    + Label.uuid + " {" + Label.uuid + ":'" + last_channel_item_uuid +"'})\n"
     query_builder.write(channel_query)
     channel_items_rel_gen.set_last_item("channel", "last")
 
     i = 0
     print "-"*50 + str(i)
     execute(query_builder.getvalue())
+    connection.commit()
 
 
 def clear_all():
@@ -135,5 +142,5 @@ def execute(query):
 if __name__ == "__main__":
     print "hello"
     clear_all();
-    # for i in range(0, 1):
-    #     create_channel(500)
+    for i in range(0, 1):
+        create_channel(50)
