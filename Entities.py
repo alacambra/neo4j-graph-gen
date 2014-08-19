@@ -8,7 +8,7 @@ def get_random_str():
 
 
 def get_time_as_str():
-    return str(long(time.time()))
+    return str(long(time.time()*1000))
 
 
 def get_connectivity_value(seed):
@@ -33,7 +33,7 @@ def get_uuid_as_string(name="lala"):
 class Label:
     channel = "channel"
     uuid = "uuid"
-    user = "people"
+    user = "person"
     task = "task"
     channel_item = "c_item"
     bce = "bce"
@@ -131,14 +131,20 @@ class User:
         ref = self.prefix + str(self.counter)
         self.query_builder.write(
                 "CREATE (" + ref + ":"  + Label.uuid + ":" + Label.user + " "
-                "{date:" + get_time_as_str() +
+                "{dateIssued:" + get_time_as_str() +
                 ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
-                ", name:'username" + get_random_str() + "'"
-                ", occupation:'ocupation" + get_random_str() + "'"
-                ", private:" + str(True).lower() + \
-                ", connectivity:'" + get_connectivity_value(self.counter) + "'"
+                ", givenName:'Max" + get_random_str() + "'"
+                ", familyName:'Zufall" + get_random_str() + "'"
+                ", email:'dummy" + get_random_str() + "@ion2s.com'"
+                ", occupation:'Developer'"
                 ", dateModified:" + get_time_as_str() +
-                ", postalCode:123654})\n")
+                ", state:'COMPLETED'" +
+                ", registrationCode:'" + get_random_str() + "'"
+                ", addressLocality:'Darmstadt'"
+                ", location:'Darmstadt'"
+                ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
+                ", password:'P@ssword'"
+                ", postalCode:12345})\n")
 
         self.last_ref = ref
         self.counter += 1;
