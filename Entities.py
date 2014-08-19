@@ -163,20 +163,19 @@ class Task:
     def create_task(self):
         ref = "T" + str(self.counter)
         self.query_builder.write("CREATE (" + ref + ":" + Label.uuid + ":" + Label.task + " " +
-                "{time:" + get_time_as_str() +
-                ", name: 'task" + get_random_str() + "'"
+                "{dateModified:" + get_time_as_str() +
+                ", title: 'task" + get_random_str() + "'"
                 ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
                 ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
-                ", location:'some place'"
-                ", private:" + str(True).lower() +
-                ", connectivity:'" + get_connectivity_value(self.counter) + "'"
+                ", location:'Darmstast'"
                 ", dateModified:" + get_time_as_str() +
                 ", startDate:" + get_time_as_str() +
                 ", endDate:" + get_time_as_str() +
-                ", timeRequired:123654})\n")
+                ", actionStatus:'NEW_TASK'"
+                ", timeRequired:525})\n")
 
         self.last_ref = ref
-        self.counter += 1;
+        self.counter += 1
         return ref
 
 
