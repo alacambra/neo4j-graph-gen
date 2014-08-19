@@ -135,6 +135,20 @@ def execute(query):
         print query
 
 
+def setup_db(clear_db=False):
+    if clear_db:
+        clear_all()
+
+    # uniqueness
+    unique_fields = ["uuid", "email"]
+
+    for field in unique_fields:
+        query = "CREATE CONSTRAINT ON (node:" + field + ") ASSERT node." + field + " IS UNIQUE"
+        execute(query)
+
+    connection.commit()
+
+
 if __name__ == "__main__":
     print "hello"
     # clear_all();

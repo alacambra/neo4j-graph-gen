@@ -80,8 +80,8 @@ class ChannelItem:
             self.task_gen.create_task()
             self.channel_item_rel_gen.refer_bce_to_item(ref, self.task_gen.last_ref)
             self.user_gen.create_user()
-            # self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
-            self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.channel_creator_ref)
+            self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
+            # self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.channel_creator_ref)
             self.user_gen.create_user()
             self.user_task_rel_gen.set_assignee_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
 
