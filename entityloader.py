@@ -4,7 +4,7 @@ import Entities
 import StringIO
 from Entities import Label
 
-execution = False
+execution = True
 
 
 class Connection:
@@ -54,9 +54,9 @@ def create_channel(total_items=10):
     channel_gen = Entities.Channel(query_builder)
     channel_items_rel_gen = Entities.ChannelItemsRelation(query_builder)
     user_gen = Entities.User(query_builder, "CH_O_U")
-    items_gen = Entities.ChannelItem(query_builder)
 
     channel_creator_ref = user_gen.create_user()
+    items_gen = Entities.ChannelItem(query_builder, channel_creator_ref)
     channel_ref, channel_uuid = channel_gen.create_channel()
     channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref)
 

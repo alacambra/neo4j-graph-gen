@@ -48,7 +48,7 @@ class ChannelRelation:
 
 
 class TaskRelation:
-    user_is_creator_of_task = "created_by"
+    user_is_creator_of_task = "creator_of"
     user_is_assigned_to_task = "assigned_to"
 
 
@@ -56,7 +56,7 @@ class ChannelItem:
 
     counter = 0
 
-    def __init__(self, query_builder):
+    def __init__(self, query_builder, channel_creator_ref):
         self.last_ref = ""
         self.counter = 0
         self.task_gen = Task(query_builder)
@@ -64,6 +64,7 @@ class ChannelItem:
         self.channel_item_rel_gen = ChannelItemsRelation(query_builder)
         self.user_task_rel_gen = UserTaskRelation(query_builder)
         self.query_builder = query_builder
+        self.channel_creator_ref = channel_creator_ref
 
     def create_channel_item(self, item_type=Label.bce):
         ref = "CI" + str(self.counter)
@@ -79,7 +80,8 @@ class ChannelItem:
             self.task_gen.create_task()
             self.channel_item_rel_gen.refer_bce_to_item(ref, self.task_gen.last_ref)
             self.user_gen.create_user()
-            self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
+            # self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
+            self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.channel_creator_ref)
             self.user_gen.create_user()
             self.user_task_rel_gen.set_assignee_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
 
@@ -129,7 +131,7 @@ class User:
         ref = self.prefix + str(self.counter)
         self.query_builder.write(
                 "CREATE (" + ref + ":"  + Label.uuid + ":" + Label.user + " "
-                "{time:" + get_time_as_str() +
+                "{date:" + get_time_as_str() +
                 ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
                 ", name:'username" + get_random_str() + "'"
                 ", occupation:'ocupation" + get_random_str() + "'"
@@ -199,7 +201,7 @@ class UserTaskRelation:
         self.query_builder = query_builder
 
     def set_creator_of_task(self, task_ref, creator_ref):
-        self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_creator_of_task + "]->(" + creator_ref + ")\n")
+        self.query_builder.write("CREATE (" + task_ref + ")<-[:" + TaskRelation.user_is_creator_of_task + "]-(" + creator_ref + ")\n")
 
     def set_assignee_of_task(self, task_ref, assignee_ref):
         self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_assigned_to_task + "]->(" + assignee_ref + ")\n")
