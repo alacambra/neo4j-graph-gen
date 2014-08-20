@@ -109,8 +109,7 @@ class Channel:
         used_uuid = get_uuid_as_string(ref)
         self.query_builder.write(
             "CREATE (" + ref + ":" + Label.uuid + ":" + Label.channel + " "
-            "{time: " + get_time_as_str() + ""
-            ", " + Label.uuid + ":'" + used_uuid + "'})\n")
+            "{" + Label.uuid + ":'" + used_uuid + "'})\n")
 
         self.counter += 1;
         self.last_ref = ref
