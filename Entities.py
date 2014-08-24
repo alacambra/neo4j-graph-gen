@@ -66,6 +66,17 @@ class ChannelItem:
         self.query_builder = query_builder
         self.channel_creator_ref = channel_creator_ref
 
+    def create_first_item(self):
+        ref = "CI" + str(self.counter)
+        self.query_builder.write(
+            "CREATE (" + ref + ":dummyItem)"
+        )
+
+        used_uuid = get_uuid_as_string(ref)
+        self.last_ref = ref
+        self.counter += 1
+        return ref, used_uuid
+
     def create_channel_item(self, item_type=Label.bce):
         ref = "CI" + str(self.counter)
         used_uuid = get_uuid_as_string(ref)
@@ -109,8 +120,7 @@ class Channel:
         used_uuid = get_uuid_as_string(ref)
         self.query_builder.write(
             "CREATE (" + ref + ":" + Label.uuid + ":" + Label.channel + " "
-            "{time: " + get_time_as_str() + ""
-            ", " + Label.uuid + ":'" + used_uuid + "'})\n")
+            "{" + Label.uuid + ":'" + used_uuid + "'})\n")
 
         self.counter += 1;
         self.last_ref = ref
