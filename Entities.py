@@ -35,7 +35,7 @@ class Label:
     uuid = "uuid"
     user = "person"
     task = "task"
-    channel_item = "c_item"
+    channel_item = "chItem"
     bce = "bce"
     container = "container"
 
@@ -82,7 +82,7 @@ class ChannelItem:
         used_uuid = get_uuid_as_string(ref)
 
         self.query_builder.write(
-            "CREATE (" + ref + ":" + item_type + ":" + Label.uuid +
+            "CREATE (" + ref + ":" + item_type + ":" + Label.uuid + ":" +Label.channel_item +
             "{time: " + get_time_as_str() + ", type:'" + item_type + "'"
             ", " + Label.uuid + ":'" + used_uuid)
 
