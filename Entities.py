@@ -83,7 +83,7 @@ class ChannelItem:
 
         self.query_builder.write(
             "CREATE (" + ref + ":" + item_type + ":" + Label.uuid + ":" +Label.channel_item +
-            "{time: " + get_time_as_str() + ", type:'" + item_type + "'"
+            "{dateIssued: " + get_time_as_str() + ", type:'" + item_type + "'"
             ", " + Label.uuid + ":'" + used_uuid)
 
         if Label.bce == item_type:
