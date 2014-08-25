@@ -35,7 +35,7 @@ class Label:
     uuid = "uuid"
     user = "person"
     task = "task"
-    channel_item = "c_item"
+    channel_item = "chItem"
     bce = "bce"
     container = "container"
 
@@ -66,13 +66,24 @@ class ChannelItem:
         self.query_builder = query_builder
         self.channel_creator_ref = channel_creator_ref
 
+    def create_first_item(self):
+        ref = "CI" + str(self.counter)
+        self.query_builder.write(
+            "CREATE (" + ref + ":dummyItem)"
+        )
+
+        used_uuid = get_uuid_as_string(ref)
+        self.last_ref = ref
+        self.counter += 1
+        return ref, used_uuid
+
     def create_channel_item(self, item_type=Label.bce):
         ref = "CI" + str(self.counter)
         used_uuid = get_uuid_as_string(ref)
 
         self.query_builder.write(
-            "CREATE (" + ref + ":" + item_type + ":" + Label.uuid +
-            "{time: " + get_time_as_str() + ", type:'" + item_type + "'"
+            "CREATE (" + ref + ":" + item_type + ":" + Label.uuid + ":" +Label.channel_item +
+            "{dateIssued: " + get_time_as_str() + ", type:'" + item_type + "'"
             ", " + Label.uuid + ":'" + used_uuid)
 
         if Label.bce == item_type:

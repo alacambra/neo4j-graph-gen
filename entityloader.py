@@ -60,7 +60,7 @@ def create_channel(total_items=10):
     channel_ref, channel_uuid = channel_gen.create_channel()
     channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref)
 
-    first_item, first_channel_item_uuid = items_gen.create_channel_item()
+    first_item, first_channel_item_uuid = items_gen.create_first_item()
     channel_items_rel_gen.set_first_item(channel_ref, first_item)
 
     second_item = None
