@@ -142,7 +142,8 @@ class User:
         self.query_builder.write(
                 "CREATE (" + ref + ":"  + Label.uuid + ":" + Label.user + " "
                 "{dateIssued:" + get_time_as_str() +
-                ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
+                ", type:'person'"
+                ", " + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
                 ", givenName:'Max" + get_random_str() + "'"
                 ", familyName:'Zufall" + get_random_str() + "'"
                 ", email:'dummy" + get_random_str() + "@ion2s.com'"
@@ -174,6 +175,7 @@ class Task:
         ref = "T" + str(self.counter)
         self.query_builder.write("CREATE (" + ref + ":" + Label.uuid + ":" + Label.task + " " +
                 "{dateModified:" + get_time_as_str() +
+                ", type: 'task'"
                 ", title: 'task" + get_random_str() + "'"
                 ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
                 ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
