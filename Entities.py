@@ -97,7 +97,7 @@ class ChannelItem:
             self.user_task_rel_gen.set_assignee_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
 
         else:
-            self.query_builder.write("', query_code:'SOME_CODE'})\n")
+            self.query_builder.write("', queryKey:'ALL_TASKS'})\n")
 
         self.last_ref = ref
         self.counter += 1
