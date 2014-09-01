@@ -155,7 +155,7 @@ class User:
                 ", location:'Darmstadt'"
                 ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
                 ", password:'P@ssword'"
-                ", postalCode:12345})\n")
+                ", postalcode:12345})\n")
 
         self.last_ref = ref
         self.counter += 1;
@@ -174,7 +174,7 @@ class Task:
     def create_task(self):
         ref = "T" + str(self.counter)
         self.query_builder.write("CREATE (" + ref + ":" + Label.uuid + ":" + Label.task + " " +
-                "{dateModified:" + get_time_as_str() +
+                "{dateIssued:" + get_time_as_str() +
                 ", type: 'task'"
                 ", title: 'task" + get_random_str() + "'"
                 ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
