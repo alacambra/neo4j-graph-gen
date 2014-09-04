@@ -140,10 +140,13 @@ def setup_db(clear_db=False):
         clear_all()
 
     # uniqueness
-    unique_fields = ["uuid", "email"]
+    unique_fields = {
+        'uuid': 'uuid',
+        'person': 'email'
+    }
 
-    for field in unique_fields:
-        query = "CREATE CONSTRAINT ON (node:" + field + ") ASSERT node." + field + " IS UNIQUE"
+    for constraint in unique_fields.items():
+        query = "CREATE CONSTRAINT ON (node:" + constraint[0] + ") ASSERT node." + constraint[1] + " IS UNIQUE"
         execute(query)
 
     connection.commit()
