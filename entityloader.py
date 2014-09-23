@@ -4,7 +4,7 @@ import Entities
 import StringIO
 from Entities import Label
 
-execution = False
+execution = True
 
 
 class Connection:
@@ -54,13 +54,13 @@ def create_channel(total_items=10):
     channel_gen = Entities.Channel(query_builder)
     channel_items_rel_gen = Entities.ChannelItemsRelation(query_builder)
     user_gen = Entities.User(query_builder, "CH_O_U")
-    items_gen = Entities.ChannelItem(query_builder)
 
     channel_creator_ref = user_gen.create_user()
+    items_gen = Entities.ChannelItem(query_builder, channel_creator_ref)
     channel_ref, channel_uuid = channel_gen.create_channel()
     channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref)
 
-    first_item, first_channel_item_uuid = items_gen.create_channel_item()
+    first_item, first_channel_item_uuid = items_gen.create_first_item()
     channel_items_rel_gen.set_first_item(channel_ref, first_item)
 
     second_item = None
@@ -133,6 +133,23 @@ def execute(query):
         return result;
     else:
         print query
+
+
+def setup_db(clear_db=False):
+    if clear_db:
+        clear_all()
+
+    # uniqueness
+    unique_fields = {
+        'uuid': 'uuid',
+        'person': 'email'
+    }
+
+    for constraint in unique_fields.items():
+        query = "CREATE CONSTRAINT ON (node:" + constraint[0] + ") ASSERT node." + constraint[1] + " IS UNIQUE"
+        execute(query)
+
+    connection.commit()
 
 
 if __name__ == "__main__":

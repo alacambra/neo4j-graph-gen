@@ -8,7 +8,7 @@ def get_random_str():
 
 
 def get_time_as_str():
-    return str(long(time.time()))
+    return str(long(time.time()*1000))
 
 
 def get_connectivity_value(seed):
@@ -33,9 +33,9 @@ def get_uuid_as_string(name="lala"):
 class Label:
     channel = "channel"
     uuid = "uuid"
-    user = "people"
+    user = "person"
     task = "task"
-    channel_item = "c_item"
+    channel_item = "chItem"
     bce = "bce"
     container = "container"
 
@@ -48,7 +48,7 @@ class ChannelRelation:
 
 
 class TaskRelation:
-    user_is_creator_of_task = "created_by"
+    user_is_creator_of_task = "creator_of"
     user_is_assigned_to_task = "assigned_to"
 
 
@@ -56,7 +56,7 @@ class ChannelItem:
 
     counter = 0
 
-    def __init__(self, query_builder):
+    def __init__(self, query_builder, channel_creator_ref):
         self.last_ref = ""
         self.counter = 0
         self.task_gen = Task(query_builder)
@@ -64,14 +64,26 @@ class ChannelItem:
         self.channel_item_rel_gen = ChannelItemsRelation(query_builder)
         self.user_task_rel_gen = UserTaskRelation(query_builder)
         self.query_builder = query_builder
+        self.channel_creator_ref = channel_creator_ref
+
+    def create_first_item(self):
+        ref = "CI" + str(self.counter)
+        self.query_builder.write(
+            "CREATE (" + ref + ":dummyItem)"
+        )
+
+        used_uuid = get_uuid_as_string(ref)
+        self.last_ref = ref
+        self.counter += 1
+        return ref, used_uuid
 
     def create_channel_item(self, item_type=Label.bce):
         ref = "CI" + str(self.counter)
         used_uuid = get_uuid_as_string(ref)
 
         self.query_builder.write(
-            "CREATE (" + ref + ":" + item_type + ":" + Label.uuid +
-            "{time: " + get_time_as_str() + ", type:'" + item_type + "'"
+            "CREATE (" + ref + ":" + item_type + ":" + Label.uuid + ":" +Label.channel_item +
+            "{dateIssued: " + get_time_as_str() + ", type:'" + item_type + "'"
             ", " + Label.uuid + ":'" + used_uuid)
 
         if Label.bce == item_type:
@@ -80,11 +92,12 @@ class ChannelItem:
             self.channel_item_rel_gen.refer_bce_to_item(ref, self.task_gen.last_ref)
             self.user_gen.create_user()
             self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
+            # self.user_task_rel_gen.set_creator_of_task(self.task_gen.last_ref, self.channel_creator_ref)
             self.user_gen.create_user()
             self.user_task_rel_gen.set_assignee_of_task(self.task_gen.last_ref, self.user_gen.last_ref)
 
         else:
-            self.query_builder.write("', query_code:'SOME_CODE'})\n")
+            self.query_builder.write("', queryKey:'ALL_TASKS'})\n")
 
         self.last_ref = ref
         self.counter += 1
@@ -107,8 +120,7 @@ class Channel:
         used_uuid = get_uuid_as_string(ref)
         self.query_builder.write(
             "CREATE (" + ref + ":" + Label.uuid + ":" + Label.channel + " "
-            "{time: " + get_time_as_str() + ""
-            ", " + Label.uuid + ":'" + used_uuid + "'})\n")
+            "{" + Label.uuid + ":'" + used_uuid + "'})\n")
 
         self.counter += 1;
         self.last_ref = ref
@@ -129,14 +141,21 @@ class User:
         ref = self.prefix + str(self.counter)
         self.query_builder.write(
                 "CREATE (" + ref + ":"  + Label.uuid + ":" + Label.user + " "
-                "{time:" + get_time_as_str() +
-                ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
-                ", name:'username" + get_random_str() + "'"
-                ", occupation:'ocupation" + get_random_str() + "'"
-                ", private:" + str(True).lower() + \
-                ", connectivity:'" + get_connectivity_value(self.counter) + "'"
+                "{dateIssued:" + get_time_as_str() +
+                ", type:'person'"
+                ", " + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
+                ", givenName:'Max" + get_random_str() + "'"
+                ", familyName:'Zufall" + get_random_str() + "'"
+                ", email:'dummy" + get_random_str() + "@ion2s.com'"
+                ", occupation:'Developer'"
                 ", dateModified:" + get_time_as_str() +
-                ", postalCode:123654})\n")
+                ", state:'COMPLETED'" +
+                ", registrationCode:'" + get_random_str() + "'"
+                ", addressLocality:'Darmstadt'"
+                ", location:'Darmstadt'"
+                ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
+                ", password:'P@ssword'"
+                ", postalcode:12345})\n")
 
         self.last_ref = ref
         self.counter += 1;
@@ -155,20 +174,20 @@ class Task:
     def create_task(self):
         ref = "T" + str(self.counter)
         self.query_builder.write("CREATE (" + ref + ":" + Label.uuid + ":" + Label.task + " " +
-                "{time:" + get_time_as_str() +
-                ", name: 'task" + get_random_str() + "'"
+                "{dateIssued:" + get_time_as_str() +
+                ", type: 'task'"
+                ", title: 'task" + get_random_str() + "'"
                 ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
                 ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
-                ", location:'some place'"
-                ", private:" + str(True).lower() +
-                ", connectivity:'" + get_connectivity_value(self.counter) + "'"
+                ", location:'Darmstast'"
                 ", dateModified:" + get_time_as_str() +
                 ", startDate:" + get_time_as_str() +
                 ", endDate:" + get_time_as_str() +
-                ", timeRequired:123654})\n")
+                ", actionStatus:'NEW_TASK'"
+                ", timeRequired:525})\n")
 
         self.last_ref = ref
-        self.counter += 1;
+        self.counter += 1
         return ref
 
 
@@ -199,7 +218,7 @@ class UserTaskRelation:
         self.query_builder = query_builder
 
     def set_creator_of_task(self, task_ref, creator_ref):
-        self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_creator_of_task + "]->(" + creator_ref + ")\n")
+        self.query_builder.write("CREATE (" + task_ref + ")<-[:" + TaskRelation.user_is_creator_of_task + "]-(" + creator_ref + ")\n")
 
     def set_assignee_of_task(self, task_ref, assignee_ref):
         self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_assigned_to_task + "]->(" + assignee_ref + ")\n")
