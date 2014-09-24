@@ -38,6 +38,7 @@ class Label:
     channel_item = "c_item"
     bce = "bce"
     container = "container"
+    roll = "roll"
 
 
 class ChannelRelation:
@@ -127,10 +128,12 @@ class User:
 
     def create_user(self):
         ref = self.prefix + str(self.counter)
+        uuid = get_uuid_as_string(ref)
+
         self.query_builder.write(
-                "CREATE (" + ref + ":"  + Label.uuid + ":" + Label.user + " "
+                "CREATE (" + ref + ":" + Label.uuid + ":" + Label.user + " "
                 "{time:" + get_time_as_str() +
-                ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
+                ", "  + Label.uuid + ":'" + uuid + "'"
                 ", name:'username" + get_random_str() + "'"
                 ", occupation:'ocupation" + get_random_str() + "'"
                 ", private:" + str(True).lower() + \
@@ -139,8 +142,25 @@ class User:
                 ", postalCode:123654})\n")
 
         self.last_ref = ref
-        self.counter += 1;
-        return ref
+        self.counter += 1
+        return ref, uuid
+
+
+class Roll:
+    counter = 0
+    last_ref = ""
+
+    def __init__(self, name, query_builder, prefix="R"):
+        self.counter = 0
+        self.prefix = prefix
+        self.query_builder = query_builder
+        self.roll_name = name
+
+    def create_roll(self):
+        ref = self.prefix + str(self.counter)
+        self.query_builder.write(
+            "CREATE (" + ref + ":" + Label.uuid + ":" + Label.roll + " "
+            "{name})\n")
 
 
 class Task:
@@ -154,10 +174,11 @@ class Task:
 
     def create_task(self):
         ref = "T" + str(self.counter)
+        uuid = get_uuid_as_string(ref)
         self.query_builder.write("CREATE (" + ref + ":" + Label.uuid + ":" + Label.task + " " +
                 "{time:" + get_time_as_str() +
                 ", name: 'task" + get_random_str() + "'"
-                ", "  + Label.uuid + ":'" + get_uuid_as_string(ref) + "'"
+                ", "  + Label.uuid + ":'" + uuid + "'"
                 ", description:'ipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsumipsum'"
                 ", location:'some place'"
                 ", private:" + str(True).lower() +
@@ -168,8 +189,8 @@ class Task:
                 ", timeRequired:123654})\n")
 
         self.last_ref = ref
-        self.counter += 1;
-        return ref
+        self.counter += 1
+        return ref, uuid
 
 
 class ChannelItemsRelation:
@@ -191,6 +212,29 @@ class ChannelItemsRelation:
 
     def set_channel_owner(self, channel_ref, owner_ref):
         self.query_builder.write("CREATE (" + owner_ref + ")-[:" + ChannelRelation.person_owns_channel + "]->(" + channel_ref + ")\n")
+
+
+class PrivateSphereRelations:
+    def __init__(self, query_builder):
+        self.query_builder = query_builder
+
+    def add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name):
+
+        subject_ref = "s" + get_random_str()
+        object_ref = "o" + get_random_str()
+
+        self.query_builder.write("match (" + subject_ref + ":uuid{uuid:\"" + subject_uuid + "\"}),")
+        self.query_builder.write("(" + object_ref + ":uuid{uuid:\"" + object_uuid + "\"})\n")
+        self.query_builder.write("create " + subject_ref + "-[r:" + roll_name + "]->" + object_ref + "\n")
+
+    def link_all(self):
+        self.query_builder.write("match (n1:task)\n")
+        self.query_builder.write("with collect(n1) as tasks\n")
+        self.query_builder.write("foreach(t1 in tasks|\n")
+        self.query_builder.write("foreach(t2 in tasks|\n")
+        self.query_builder.write("MERGE (t1)-[r:linked {bl:\"assignee\"}]->(t2)\n")
+        self.query_builder.write(")\n")
+        self.query_builder.write(")\n")
 
 
 class UserTaskRelation:

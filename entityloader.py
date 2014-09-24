@@ -4,7 +4,7 @@ import Entities
 import StringIO
 from Entities import Label
 
-execution = False
+execution = True
 
 
 class Connection:
@@ -46,6 +46,7 @@ class Connection:
         return self.cursor
 
 connection = Connection().create()
+
 
 def create_channel(total_items=10):
 
@@ -103,6 +104,72 @@ def create_channel(total_items=10):
     connection.commit()
 
 
+def create_tasks(total_tasks=10):
+    pass
+
+
+def create_tasks_private_sphere(total_tasks=10, total_users=10):
+    step = 20
+    tasks_uuids = []
+    users_uuids = []
+
+    tasks_x_creator = total_tasks / total_users
+
+    query_builder = StringIO.StringIO()
+    task_gen = Entities.Task(query_builder)
+    private_sphere_relations = Entities.PrivateSphereRelations(query_builder)
+    stepped_insertion(query_builder, total_tasks, step, task_gen.create_task, tasks_uuids)
+
+    print "-"*50 + "linking objects"
+    private_sphere_relations.link_all()
+    execute(query_builder.getvalue())
+    connection.commit()
+
+    user_gen = Entities.User(query_builder)
+    stepped_insertion(query_builder, total_users, step, user_gen.create_user, users_uuids)
+
+    query_builder.truncate(0)
+    query_builder.seek(0)
+
+    j = 0
+    for task_uuid in tasks_uuids:
+
+        creator_index = j % len(users_uuids)
+
+        for i in range(0, len(users_uuids)):
+            private_sphere_relations.add_subject_to_object_with_roll_name(
+                users_uuids[i]
+                , task_uuid,
+                "owner" if i == creator_index else "assignee")
+
+            execute(query_builder.getvalue())
+            connection.commit()
+            query_builder.truncate(0)
+            query_builder.seek(0)
+
+        j += 1
+
+
+def stepped_insertion(query_builder, total_items, step, creation_method, uuids=[]):
+    for i in range(0, total_items - 1):
+
+        uuids.append(creation_method()[1])
+
+        if i % step == 0 and i != 0:
+            print "-"*50 + str(i)
+            execute(query_builder.getvalue())
+            connection.commit()
+
+            query_builder.truncate(0)
+            query_builder.seek(0)
+
+    execute(query_builder.getvalue())
+    connection.commit()
+
+    query_builder.truncate(0)
+    query_builder.seek(0)
+
+
 def clear_all():
     query = "MATCH n return count(n) as total"
     result = connection.get_cursor().execute(query)
@@ -130,7 +197,7 @@ def execute(query):
     if execution:
         result = connection.get_cursor().execute(query)
         # connection.commit()
-        return result;
+        return result
     else:
         print query
 
