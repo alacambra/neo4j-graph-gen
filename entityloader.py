@@ -3,6 +3,7 @@ import neo4j
 import Entities
 import StringIO
 from Entities import Label
+import random
 
 execution = True
 
@@ -108,20 +109,19 @@ def create_tasks(total_tasks=10):
     pass
 
 
-def create_tasks_private_sphere(total_tasks=10, total_users=10):
+def create_simple_private_sphere(total_tasks=10, total_users=10):
     step = 20
     tasks_uuids = []
     users_uuids = []
-
-    tasks_x_creator = total_tasks / total_users
 
     query_builder = StringIO.StringIO()
     task_gen = Entities.Task(query_builder)
     private_sphere_relations = Entities.PrivateSphereRelations(query_builder)
     stepped_insertion(query_builder, total_tasks, step, task_gen.create_task, tasks_uuids)
 
-    print "-"*50 + "linking objects"
+    print "-"*5 + " linking objects (wait)" + "-"*50
     private_sphere_relations.link_all()
+    print "-"*5 + " READY linking objects " + "-"*50
     execute(query_builder.getvalue())
     connection.commit()
 
@@ -134,20 +134,31 @@ def create_tasks_private_sphere(total_tasks=10, total_users=10):
     j = 0
     for task_uuid in tasks_uuids:
 
-        creator_index = j % len(users_uuids)
+        owner_index = random.randint(0, len(users_uuids) - 1)
+        assignee_index = random.randint(0, len(users_uuids) - 1)
 
-        for i in range(0, len(users_uuids)):
-            private_sphere_relations.add_subject_to_object_with_roll_name(
-                users_uuids[i]
-                , task_uuid,
-                "owner" if i == creator_index else "assignee")
+        private_sphere_relations.f(users_uuids[owner_index], task_uuid, "owner")
+        private_sphere_relations.f( users_uuids[assignee_index], task_uuid, "assignee")
 
-            execute(query_builder.getvalue())
-            connection.commit()
-            query_builder.truncate(0)
-            query_builder.seek(0)
+        for i in range(0, 5):
+            private_sphere_relations.f(
+                users_uuids[random.randint(0, len(users_uuids) - 1)] , task_uuid, "observer")
+
+        if j % 3 == 0:
+            private_sphere_relations.build_subject_to_object_with_roll_name()
+            commit_and_restart(query_builder)
 
         j += 1
+
+    private_sphere_relations.build_subject_to_object_with_roll_name()
+    commit_and_restart(query_builder)
+
+
+def commit_and_restart(query_builder):
+    execute(query_builder.getvalue())
+    connection.commit()
+    query_builder.truncate(0)
+    query_builder.seek(0)
 
 
 def stepped_insertion(query_builder, total_items, step, creation_method, uuids=[]):
@@ -205,5 +216,7 @@ def execute(query):
 if __name__ == "__main__":
     print "hello"
     # clear_all();
-    for i in range(0, 1):
-        create_channel()
+    # for i in range(0, 1):
+    #     create_channel()
+
+    create_simple_private_sphere()

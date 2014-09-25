@@ -1,10 +1,12 @@
 __author__ = 'alacambra'
 import time
 import uuid
+import StringIO
+import random
 
 
 def get_random_str():
-    return get_time_as_str()
+    return str(random.randint(1, 10000000000000)) + random.choice('abcdefghijklmnopqrstuvwxyz')
 
 
 def get_time_as_str():
@@ -28,7 +30,6 @@ def get_uuid_as_string(name="lala"):
             id = uuid.uuid4()
 
     return str(id)
-
 
 class Label:
     channel = "channel"
@@ -215,8 +216,51 @@ class ChannelItemsRelation:
 
 
 class PrivateSphereRelations:
+
     def __init__(self, query_builder):
         self.query_builder = query_builder
+        self.match_query_builder = StringIO.StringIO()
+        self.match_query_builder.write("match")
+        self.create_query_builder = StringIO.StringIO()
+        self.create_query_builder.write("create")
+        self.uuid_ref = {}
+
+    def f(self, subject_uuid, object_uuid, roll_name):
+
+        subject_ref = "s" + get_random_str()
+        object_ref = "o" + get_random_str()
+
+        if subject_uuid in self.uuid_ref:
+            subject_ref = self.uuid_ref.get(subject_uuid)
+        else:
+            self.uuid_ref[subject_uuid] = subject_ref
+            self.match_query_builder.write(" (" + subject_ref + ":uuid{uuid:\"" + subject_uuid + "\"}),\n")
+
+        if object_uuid in self.uuid_ref:
+            object_ref = self.uuid_ref.get(object_uuid)
+        else:
+            self.uuid_ref[object_uuid] = object_ref
+            self.match_query_builder.write(" (" + object_ref + ":uuid{uuid:\"" + object_uuid + "\"}),\n")
+
+        self.create_query_builder.write(" " + subject_ref + "-[:" + roll_name + "]->" + object_ref + ",\n")
+
+    def build_subject_to_object_with_roll_name(self):
+
+        self.match_query_builder.seek(pos=-2, mode=2)
+        self.match_query_builder.write("\n")
+
+        self.create_query_builder.seek(pos=-2, mode=2)
+        self.create_query_builder.write("  ")
+
+        self.match_query_builder.write(self.create_query_builder.getvalue())
+        self.query_builder.write(self.match_query_builder.getvalue())
+        print self.query_builder.getvalue()
+        self.uuid_ref = {}
+        self.match_query_builder = StringIO.StringIO()
+
+        self.match_query_builder.write("match")
+        self.create_query_builder = StringIO.StringIO()
+        self.create_query_builder.write("create")
 
     def add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name):
 
