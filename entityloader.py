@@ -4,6 +4,7 @@ import Entities
 import StringIO
 from Entities import Label
 import random
+import math
 
 execution = True
 
@@ -110,7 +111,7 @@ def create_tasks(total_tasks=10):
 
 
 def create_simple_private_sphere(total_tasks=10, total_users=10):
-    step = 20
+    step = 100
     tasks_uuids = []
     users_uuids = []
 
@@ -120,10 +121,45 @@ def create_simple_private_sphere(total_tasks=10, total_users=10):
     stepped_insertion(query_builder, total_tasks, step, task_gen.create_task, tasks_uuids)
 
     print "-"*5 + " linking objects (wait)" + "-"*50
-    private_sphere_relations.link_all()
-    print "-"*5 + " READY linking objects " + "-"*50
-    execute(query_builder.getvalue())
-    connection.commit()
+    # private_sphere_relations.link_all()
+
+    j = 0
+    per_cent = 0
+    per_cent_step = math.ceil(float(len(tasks_uuids))/100)
+    total_done = 0
+
+    for task_origin_uuid in tasks_uuids:
+
+        done = []
+
+        for i in range(0, 10):
+
+            task_target_uuid = tasks_uuids[random.randint(0, len(tasks_uuids) - 1)]
+
+            if task_target_uuid == task_origin_uuid or task_target_uuid in done:
+                continue
+
+            done.append(task_target_uuid)
+            private_sphere_relations.link_object(task_origin_uuid, task_target_uuid)
+
+            if j % 100 == 0:
+                private_sphere_relations.build_subject_to_object_with_roll_name()
+                commit_and_restart(query_builder)
+
+            j += 1
+
+        if total_done % per_cent_step == 0:
+            per_cent += 1
+            print str((total_done * 100)/len(tasks_uuids)) + "%"
+
+
+
+        total_done += 1
+
+    private_sphere_relations.build_subject_to_object_with_roll_name()
+    commit_and_restart(query_builder)
+
+    print "-"*5 + " READY: objects linked" + "-"*50
 
     user_gen = Entities.User(query_builder)
     stepped_insertion(query_builder, total_users, step, user_gen.create_user, users_uuids)
@@ -132,16 +168,17 @@ def create_simple_private_sphere(total_tasks=10, total_users=10):
     query_builder.seek(0)
 
     j = 0
+    print "-"*5 + "connecting users and tasks" + "-"*50
     for task_uuid in tasks_uuids:
 
         owner_index = random.randint(0, len(users_uuids) - 1)
         assignee_index = random.randint(0, len(users_uuids) - 1)
 
-        private_sphere_relations.f(users_uuids[owner_index], task_uuid, "owner")
-        private_sphere_relations.f( users_uuids[assignee_index], task_uuid, "assignee")
+        private_sphere_relations.add_subject_to_object_with_roll_name(users_uuids[owner_index], task_uuid, "owner")
+        private_sphere_relations.add_subject_to_object_with_roll_name( users_uuids[assignee_index], task_uuid, "assignee")
 
         for i in range(0, 5):
-            private_sphere_relations.f(
+            private_sphere_relations.add_subject_to_object_with_roll_name(
                 users_uuids[random.randint(0, len(users_uuids) - 1)] , task_uuid, "observer")
 
         if j % 3 == 0:
@@ -150,8 +187,11 @@ def create_simple_private_sphere(total_tasks=10, total_users=10):
 
         j += 1
 
+    print "-"*5 + "READY: users and tasks connected" + "-"*50
     private_sphere_relations.build_subject_to_object_with_roll_name()
     commit_and_restart(query_builder)
+
+    print "all_done"
 
 
 def commit_and_restart(query_builder):
@@ -174,12 +214,7 @@ def stepped_insertion(query_builder, total_items, step, creation_method, uuids=[
             query_builder.truncate(0)
             query_builder.seek(0)
 
-    execute(query_builder.getvalue())
-    connection.commit()
-
-    query_builder.truncate(0)
-    query_builder.seek(0)
-
+    commit_and_restart(query_builder)
 
 def clear_all():
     query = "MATCH n return count(n) as total"

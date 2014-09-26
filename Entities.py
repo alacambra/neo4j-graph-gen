@@ -225,24 +225,24 @@ class PrivateSphereRelations:
         self.create_query_builder.write("create")
         self.uuid_ref = {}
 
-    def f(self, subject_uuid, object_uuid, roll_name):
+    def add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name):
 
         subject_ref = "s" + get_random_str()
         object_ref = "o" + get_random_str()
 
-        if subject_uuid in self.uuid_ref:
-            subject_ref = self.uuid_ref.get(subject_uuid)
-        else:
-            self.uuid_ref[subject_uuid] = subject_ref
-            self.match_query_builder.write(" (" + subject_ref + ":uuid{uuid:\"" + subject_uuid + "\"}),\n")
+        subject_ref = self.create_uuid_match(subject_uuid, subject_ref)
+        object_ref = self.create_uuid_match(object_uuid, object_ref)
 
+        self.create_query_builder.write(" " + subject_ref + "-[:" + roll_name + "]->" + object_ref + ",\n")
+
+    def create_uuid_match(self, object_uuid, object_ref):
         if object_uuid in self.uuid_ref:
             object_ref = self.uuid_ref.get(object_uuid)
         else:
             self.uuid_ref[object_uuid] = object_ref
             self.match_query_builder.write(" (" + object_ref + ":uuid{uuid:\"" + object_uuid + "\"}),\n")
 
-        self.create_query_builder.write(" " + subject_ref + "-[:" + roll_name + "]->" + object_ref + ",\n")
+        return object_ref
 
     def build_subject_to_object_with_roll_name(self):
 
@@ -254,22 +254,13 @@ class PrivateSphereRelations:
 
         self.match_query_builder.write(self.create_query_builder.getvalue())
         self.query_builder.write(self.match_query_builder.getvalue())
-        print self.query_builder.getvalue()
+        # print self.query_builder.getvalue()
         self.uuid_ref = {}
         self.match_query_builder = StringIO.StringIO()
 
         self.match_query_builder.write("match")
         self.create_query_builder = StringIO.StringIO()
         self.create_query_builder.write("create")
-
-    def add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name):
-
-        subject_ref = "s" + get_random_str()
-        object_ref = "o" + get_random_str()
-
-        self.query_builder.write("match (" + subject_ref + ":uuid{uuid:\"" + subject_uuid + "\"}),")
-        self.query_builder.write("(" + object_ref + ":uuid{uuid:\"" + object_uuid + "\"})\n")
-        self.query_builder.write("create " + subject_ref + "-[r:" + roll_name + "]->" + object_ref + "\n")
 
     def link_all(self):
         self.query_builder.write("match (n1:task)\n")
@@ -279,6 +270,13 @@ class PrivateSphereRelations:
         self.query_builder.write("MERGE (t1)-[r:linked {bl:\"assignee\"}]->(t2)\n")
         self.query_builder.write(")\n")
         self.query_builder.write(")\n")
+
+    def link_object(self, uuid_origin, uuid_target, merged=True, blacklisted="assignee"):
+        origin_ref = self.create_uuid_match(uuid_origin, "o" + get_random_str())
+        target_ref = self.create_uuid_match(uuid_target, "o" + get_random_str())
+
+        self.create_query_builder\
+            .write(" " + origin_ref + "-[:linked {bl:\"" + blacklisted + "\"}]->" + target_ref + ",\n")
 
 
 class UserTaskRelation:
