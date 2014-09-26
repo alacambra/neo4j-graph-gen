@@ -137,7 +137,7 @@ class User:
                 ", "  + Label.uuid + ":'" + uuid + "'"
                 ", name:'username" + get_random_str() + "'"
                 ", occupation:'ocupation" + get_random_str() + "'"
-                ", private:" + str(True).lower() + \
+                ", private:" + str(True).lower() +
                 ", connectivity:'" + get_connectivity_value(self.counter) + "'"
                 ", dateModified:" + get_time_as_str() +
                 ", postalCode:123654})\n")
@@ -219,10 +219,7 @@ class PrivateSphereRelations:
 
     def __init__(self, query_builder):
         self.query_builder = query_builder
-        self.match_query_builder = StringIO.StringIO()
-        self.match_query_builder.write("match")
-        self.create_query_builder = StringIO.StringIO()
-        self.create_query_builder.write("create")
+        self.initialize_query_builders()
         self.uuid_ref = {}
 
     def add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name):
@@ -234,6 +231,20 @@ class PrivateSphereRelations:
         object_ref = self.create_uuid_match(object_uuid, object_ref)
 
         self.create_query_builder.write(" " + subject_ref + "-[:" + roll_name + "]->" + object_ref + ",\n")
+
+    def add_subject_to_object_with_roll_node(self, subject_uuid, object_uuid, roll_name):
+
+        subject_ref = "s" + get_random_str()
+        object_ref = "o" + get_random_str()
+        roll_ref = "r" + get_random_str()
+
+        subject_ref = self.create_uuid_match(subject_uuid, subject_ref)
+        object_ref = self.create_uuid_match(object_uuid, object_ref)
+
+        self.match_query_builder.\
+            write("(" + roll_ref + ":roll{name:\"" + roll_name + "\"})-[:linked]->" + object_ref + ",\n")
+
+        self.merge_query_builder.write(" merge " + subject_ref + "-[:has_roll]->" + roll_ref + "\n")
 
     def create_uuid_match(self, object_uuid, object_ref):
         if object_uuid in self.uuid_ref:
@@ -247,20 +258,30 @@ class PrivateSphereRelations:
     def build_subject_to_object_with_roll_name(self):
 
         self.match_query_builder.seek(pos=-2, mode=2)
-        self.match_query_builder.write("\n")
+        if self.match_query_builder.tell() > 0:
+            self.match_query_builder.write("\n")
 
         self.create_query_builder.seek(pos=-2, mode=2)
-        self.create_query_builder.write("  ")
+        self.create_query_builder.truncate()
 
-        self.match_query_builder.write(self.create_query_builder.getvalue())
-        self.query_builder.write(self.match_query_builder.getvalue())
+        if self.create_query_builder.tell() > 0:
+            self.merge_query_builder.write("create " + self.create_query_builder.getvalue())
+
+        else:
+            self.merge_query_builder.write(self.create_query_builder.getvalue())
+
+        self.match_query_builder.write(self.merge_query_builder.getvalue())
+        self.query_builder.write("match " + self.match_query_builder.getvalue())
+
         # print self.query_builder.getvalue()
-        self.uuid_ref = {}
-        self.match_query_builder = StringIO.StringIO()
 
-        self.match_query_builder.write("match")
+        self.uuid_ref = {}
+        self.initialize_query_builders()
+
+    def initialize_query_builders(self):
+        self.match_query_builder = StringIO.StringIO()
         self.create_query_builder = StringIO.StringIO()
-        self.create_query_builder.write("create")
+        self.merge_query_builder = StringIO.StringIO()
 
     def link_all(self):
         self.query_builder.write("match (n1:task)\n")
@@ -271,12 +292,24 @@ class PrivateSphereRelations:
         self.query_builder.write(")\n")
         self.query_builder.write(")\n")
 
-    def link_object(self, uuid_origin, uuid_target, merged=True, blacklisted="assignee"):
+    def link_object(self, uuid_origin, uuid_target, merged=True, blacklisted=["assignee"], rolls=[], use_rolls=True):
+
         origin_ref = self.create_uuid_match(uuid_origin, "o" + get_random_str())
         target_ref = self.create_uuid_match(uuid_target, "o" + get_random_str())
 
-        self.create_query_builder\
-            .write(" " + origin_ref + "-[:linked {bl:\"" + blacklisted + "\"}]->" + target_ref + ",\n")
+        if use_rolls:
+            rolls = rolls + blacklisted
+            wl_match = "-[:linked]->" + target_ref
+
+            for roll in rolls:
+                roll_ref = "r" + get_random_str()
+                self.merge_query_builder.write(
+                    "merge " + origin_ref + "-[:has_roll]->(" + roll_ref + ":roll{name:\"" + roll + "\"})\n")
+                self.create_query_builder.write("" if roll in blacklisted else roll_ref + wl_match + ",\n")
+
+        else:
+            self.create_query_builder\
+                .write(" " + origin_ref + "-[:linked {bl:\"" + ",".join(blacklisted) + "\"}]->" + target_ref + ",\n")
 
 
 class UserTaskRelation:
