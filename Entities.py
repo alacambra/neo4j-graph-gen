@@ -253,6 +253,29 @@ class PrivateSphereRelations:
 
         self.create_query_builder.write(" " + subject_ref + "-[:" + roll_name + "]->" + object_ref + ",\n")
 
+    def link_object(self, uuid_origin, uuid_target, merged=True, blacklisted=["assignee"], rolls=[], use_rolls=True):
+
+        origin_ref = self.create_uuid_match(uuid_origin, "o" + get_random_str())
+        target_ref = self.create_uuid_match(uuid_target, "o" + get_random_str())
+
+        if use_rolls:
+            rolls = rolls + blacklisted
+            wl_match = "-[:linked]->" + target_ref
+
+            for roll in rolls:
+                roll_ref = "r" + get_random_str()
+                self.merge_query_builder.write(
+                    "merge " + origin_ref + "-[:has_roll]->(" + roll_ref + ":roll{name:\"" + roll + "\"})\n")
+
+                if roll in blacklisted:
+                    continue
+
+                self.merge_query_builder.write("create " + roll_ref + wl_match + "\n")
+
+        else:
+            self.create_query_builder \
+                .write(" " + origin_ref + "-[:linked {bl:\"" + ",".join(blacklisted) + "\"}]->" + target_ref + ",\n")
+
     def add_subject_to_object_with_roll_node(self, subject_uuid, object_uuid, roll_name):
 
         subject_ref = "s" + get_random_str()
@@ -283,7 +306,6 @@ class PrivateSphereRelations:
             self.query_builder.seek(pos=-2, mode=2)
             self.query_builder.write("\n ")
 
-
         if self.create_query_builder.tell() > 0:
             self.query_builder.write("create " + self.create_query_builder.getvalue())
             self.query_builder.seek(pos=-2, mode=2)
@@ -291,8 +313,6 @@ class PrivateSphereRelations:
 
         if self.merge_query_builder.tell() > 0:
             self.query_builder.write(self.merge_query_builder.getvalue())
-            # self.query_builder.seek(pos=-2, mode=2)
-            # self.query_builder.write("\n ")
 
         self.uuid_ref = {}
         self.initialize_query_builders()
@@ -310,25 +330,6 @@ class PrivateSphereRelations:
         self.query_builder.write("MERGE (t1)-[r:linked {bl:\"assignee\"}]->(t2)\n")
         self.query_builder.write(")\n")
         self.query_builder.write(")\n")
-
-    def link_object(self, uuid_origin, uuid_target, merged=True, blacklisted=["assignee"], rolls=[], use_rolls=True):
-
-        origin_ref = self.create_uuid_match(uuid_origin, "o" + get_random_str())
-        target_ref = self.create_uuid_match(uuid_target, "o" + get_random_str())
-
-        if use_rolls:
-            rolls = rolls + blacklisted
-            wl_match = "-[:linked]->" + target_ref
-
-            for roll in rolls:
-                roll_ref = "r" + get_random_str()
-                self.merge_query_builder.write(
-                    "merge " + origin_ref + "-[:has_roll]->(" + roll_ref + ":roll{name:\"" + roll + "\"})\n")
-                self.create_query_builder.write("" if roll in blacklisted else roll_ref + wl_match + ",\n")
-
-        else:
-            self.create_query_builder\
-                .write(" " + origin_ref + "-[:linked {bl:\"" + ",".join(blacklisted) + "\"}]->" + target_ref + ",\n")
 
 
 class UserTaskRelation:

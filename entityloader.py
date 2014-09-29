@@ -140,8 +140,6 @@ def create_complex_private_sphere(total_tasks=10, total_users=10):
     stepped_insertion(query_builder, total_tasks, step, task_gen.create_task, tasks_uuids)
 
     print "-" * 5 + " linking objects (wait)" + "-" * 50
-    # private_sphere_relations.link_all()
-
     j = 0
     per_cent = 0
     per_cent_step = math.ceil(float(len(tasks_uuids)) / 5)
@@ -161,10 +159,10 @@ def create_complex_private_sphere(total_tasks=10, total_users=10):
             done.append(task_target_uuid)
             private_sphere_relations. \
                 link_object(
-                task_origin_uuid,
-                task_target_uuid,
-                blacklisted=["assignee", "observer"],
-                rolls=["assignee", "observer", "owner"])
+                    task_origin_uuid,
+                    task_target_uuid,
+                    blacklisted=["observer"],
+                    rolls=["assignee", "observer", "owner"])
 
             if j % 100 == 0:
                 private_sphere_relations.build_subject_to_object_with_roll_name()
@@ -196,12 +194,14 @@ def create_complex_private_sphere(total_tasks=10, total_users=10):
         owner_index = random.randint(0, len(users_uuids) - 1)
         assignee_index = random.randint(0, len(users_uuids) - 1)
 
-        private_sphere_relations.add_subject_to_object_with_roll_name(users_uuids[owner_index], task_uuid, "owner")
-        private_sphere_relations.add_subject_to_object_with_roll_name(users_uuids[assignee_index], task_uuid,
-                                                                      "assignee")
+        private_sphere_relations.add_subject_to_object_with_roll_node(
+            users_uuids[owner_index], task_uuid, "owner")
+
+        private_sphere_relations.add_subject_to_object_with_roll_node(
+            users_uuids[assignee_index], task_uuid, "assignee")
 
         for i in range(0, 5):
-            private_sphere_relations.add_subject_to_object_with_roll_name(
+            private_sphere_relations.add_subject_to_object_with_roll_node(
                 users_uuids[random.randint(0, len(users_uuids) - 1)], task_uuid, "observer")
 
         if j % 3 == 0:
@@ -265,7 +265,7 @@ def create_simple_private_sphere(total_tasks=10, total_users=10):
     commit_and_restart(query_builder)
 
     print "-" * 5 + " READY: objects linked" + "-" * 50
-    return
+
     user_gen = Entities.User(query_builder)
     stepped_insertion(query_builder, total_users, step, user_gen.create_user, users_uuids)
 
@@ -283,13 +283,13 @@ def create_simple_private_sphere(total_tasks=10, total_users=10):
         assignee_index = random.randint(0, len(users_uuids) - 1)
 
         private_sphere_relations\
-            .add_subject_to_object_with_roll_node(users_uuids[owner_index], task_uuid, "owner")
+            .add_subject_to_object_with_roll_name(users_uuids[owner_index], task_uuid, "owner")
 
         private_sphere_relations\
-            .add_subject_to_object_with_roll_node(users_uuids[assignee_index], task_uuid, "assignee")
+            .add_subject_to_object_with_roll_name(users_uuids[assignee_index], task_uuid, "assignee")
 
         for i in range(0, 5):
-            private_sphere_relations.add_subject_to_object_with_roll_node(
+            private_sphere_relations.add_subject_to_object_with_roll_name(
                 users_uuids[random.randint(0, len(users_uuids) - 1)], task_uuid, "observer")
 
         if j % 3 == 0:
