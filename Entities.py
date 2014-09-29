@@ -3,6 +3,27 @@ import time
 import uuid
 import StringIO
 import random
+import logging
+
+
+def configure_logger():
+    logger.setLevel(logging.DEBUG)
+
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # create formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    # add formatter to ch
+    ch.setFormatter(formatter)
+
+    # add ch to logger
+    logger.addHandler(ch)
+
+logger = logging.getLogger(__name__)
+configure_logger()
 
 
 def get_random_str():
@@ -257,23 +278,21 @@ class PrivateSphereRelations:
 
     def build_subject_to_object_with_roll_name(self):
 
-        self.match_query_builder.seek(pos=-2, mode=2)
         if self.match_query_builder.tell() > 0:
-            self.match_query_builder.write("\n")
+            self.query_builder.write("match " + self.match_query_builder.getvalue())
+            self.query_builder.seek(pos=-2, mode=2)
+            self.query_builder.write("\n ")
 
-        self.create_query_builder.seek(pos=-2, mode=2)
-        self.create_query_builder.truncate()
 
         if self.create_query_builder.tell() > 0:
-            self.merge_query_builder.write("create " + self.create_query_builder.getvalue())
+            self.query_builder.write("create " + self.create_query_builder.getvalue())
+            self.query_builder.seek(pos=-2, mode=2)
+            self.query_builder.write("\n ")
 
-        else:
-            self.merge_query_builder.write(self.create_query_builder.getvalue())
-
-        self.match_query_builder.write(self.merge_query_builder.getvalue())
-        self.query_builder.write("match " + self.match_query_builder.getvalue())
-
-        # print self.query_builder.getvalue()
+        if self.merge_query_builder.tell() > 0:
+            self.query_builder.write(self.merge_query_builder.getvalue())
+            # self.query_builder.seek(pos=-2, mode=2)
+            # self.query_builder.write("\n ")
 
         self.uuid_ref = {}
         self.initialize_query_builders()

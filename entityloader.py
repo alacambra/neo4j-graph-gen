@@ -5,11 +5,31 @@ import StringIO
 from Entities import Label
 import random
 import math
-
+import logging
 execution = True
 
 
+def configure_logger():
+    logger.setLevel(logging.DEBUG)
+
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # create formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    # add formatter to ch
+    ch.setFormatter(formatter)
+
+    # add ch to logger
+    logger.addHandler(ch)
+
+logger = logging.getLogger(__name__)
+configure_logger()
+
 class Connection:
+
     connection = None
     cursor = None
 
@@ -109,7 +129,7 @@ def create_tasks(total_tasks=10):
     pass
 
 
-def create_simple_private_sphere(total_tasks=10, total_users=10):
+def create_complex_private_sphere(total_tasks=10, total_users=10):
     step = 100
     tasks_uuids = []
     users_uuids = []
@@ -197,7 +217,7 @@ def create_simple_private_sphere(total_tasks=10, total_users=10):
     print "all_done"
 
 
-def create_complex_private_sphere(total_tasks=10, total_users=10):
+def create_simple_private_sphere(total_tasks=10, total_users=10):
     step = 100
     tasks_uuids = []
     users_uuids = []
@@ -227,7 +247,7 @@ def create_complex_private_sphere(total_tasks=10, total_users=10):
                 continue
 
             done.append(task_target_uuid)
-            private_sphere_relations.link_object(task_origin_uuid, task_target_uuid)
+            private_sphere_relations.link_object(task_origin_uuid, task_target_uuid, use_rolls=False)
 
             if j % 100 == 0:
                 private_sphere_relations.build_subject_to_object_with_roll_name()
@@ -245,9 +265,12 @@ def create_complex_private_sphere(total_tasks=10, total_users=10):
     commit_and_restart(query_builder)
 
     print "-" * 5 + " READY: objects linked" + "-" * 50
-
+    return
     user_gen = Entities.User(query_builder)
     stepped_insertion(query_builder, total_users, step, user_gen.create_user, users_uuids)
+
+    if total_users != len(users_uuids):
+        raise Exception("inserted less users than desired")
 
     query_builder.truncate(0)
     query_builder.seek(0)
@@ -283,6 +306,9 @@ def create_complex_private_sphere(total_tasks=10, total_users=10):
 
 
 def commit_and_restart(query_builder):
+    if query_builder.tell() == 0:
+        logger.info("query builder is empty. Nothing to commit")
+        return
     execute(query_builder.getvalue())
     connection.commit()
     query_builder.truncate(0)
@@ -290,7 +316,7 @@ def commit_and_restart(query_builder):
 
 
 def stepped_insertion(query_builder, total_items, step, creation_method, uuids=[]):
-    for i in range(0, total_items - 1):
+    for i in range(0, total_items):
 
         uuids.append(creation_method()[1])
 
@@ -326,14 +352,12 @@ def clear_all():
 
 
 def execute(query):
-    print query
+    logger.debug("commiting: \n" + query)
 
     if execution:
         result = connection.get_cursor().execute(query)
         # connection.commit()
         return result
-    else:
-        print query
 
 
 if __name__ == "__main__":
