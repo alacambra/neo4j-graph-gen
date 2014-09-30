@@ -243,16 +243,6 @@ class PrivateSphereRelations:
         self.initialize_query_builders()
         self.uuid_ref = {}
 
-    def add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name):
-
-        subject_ref = "s" + get_random_str()
-        object_ref = "o" + get_random_str()
-
-        subject_ref = self.create_uuid_match(subject_uuid, subject_ref)
-        object_ref = self.create_uuid_match(object_uuid, object_ref)
-
-        self.create_query_builder.write(" " + subject_ref + "-[:" + roll_name + "]->" + object_ref + ",\n")
-
     def link_object(self, uuid_origin, uuid_target, merged=True, blacklisted=["assignee"], rolls=[], use_rolls=True):
 
         origin_ref = self.create_uuid_match(uuid_origin, "o" + get_random_str())
@@ -276,6 +266,22 @@ class PrivateSphereRelations:
             self.create_query_builder \
                 .write(" " + origin_ref + "-[:linked {bl:\"" + ",".join(blacklisted) + "\"}]->" + target_ref + ",\n")
 
+    def add_subject_to_object_with_roll(self, subject_uuid, object_uuid, roll_name, roll_nodes):
+        if roll_nodes:
+            self.add_subject_to_object_with_roll(self, subject_uuid, object_uuid, roll_name);
+        else:
+            self.add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name)
+
+    def add_subject_to_object_with_roll_name(self, subject_uuid, object_uuid, roll_name):
+
+        subject_ref = "s" + get_random_str()
+        object_ref = "o" + get_random_str()
+
+        subject_ref = self.create_uuid_match(subject_uuid, subject_ref)
+        object_ref = self.create_uuid_match(object_uuid, object_ref)
+
+        self.create_query_builder.write(" " + subject_ref + "-[:" + roll_name + "]->" + object_ref + ",\n")
+
     def add_subject_to_object_with_roll_node(self, subject_uuid, object_uuid, roll_name):
 
         subject_ref = "s" + get_random_str()
@@ -285,7 +291,7 @@ class PrivateSphereRelations:
         subject_ref = self.create_uuid_match(subject_uuid, subject_ref)
         object_ref = self.create_uuid_match(object_uuid, object_ref)
 
-        self.match_query_builder.\
+        self.match_query_builder. \
             write("(" + roll_ref + ":roll{name:\"" + roll_name + "\"})-[:linked]->" + object_ref + ",\n")
 
         self.merge_query_builder.write(" merge " + subject_ref + "-[:has_roll]->" + roll_ref + "\n")

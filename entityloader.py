@@ -232,7 +232,7 @@ def create_complex_private_sphere(total_tasks=10, total_users=10, roll_nodes=Tru
     commit_and_restart(query_builder)
 
     print "all_done"
-    
+
 
 def commit_and_restart(query_builder):
     if query_builder.tell() == 0:
