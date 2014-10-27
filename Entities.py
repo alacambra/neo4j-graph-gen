@@ -71,8 +71,8 @@ class ChannelRelation:
 
 
 class TaskRelation:
-    user_is_creator_of_task = "created_by"
-    user_is_assigned_to_task = "assigned_to"
+    user_is_creator_of_task = "owns"
+    user_is_assigned_to_task = "assignee"
 
 
 class ChannelItem:
@@ -161,6 +161,7 @@ class User:
                 ", private:" + str(True).lower() +
                 ", connectivity:'" + get_connectivity_value(self.counter) + "'"
                 ", dateModified:" + get_time_as_str() +
+                ", type:'people'" +
                 ", postalCode:123654})\n")
 
         self.last_ref = ref
@@ -208,6 +209,7 @@ class Task:
                 ", dateModified:" + get_time_as_str() +
                 ", startDate:" + get_time_as_str() +
                 ", endDate:" + get_time_as_str() +
+                ", type:'task'" +
                 ", timeRequired:123654})\n")
 
         self.last_ref = ref
@@ -344,7 +346,7 @@ class UserTaskRelation:
         self.query_builder = query_builder
 
     def set_creator_of_task(self, task_ref, creator_ref):
-        self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_creator_of_task + "]->(" + creator_ref + ")\n")
+        self.query_builder.write("CREATE (" + task_ref + ")<-[:" + TaskRelation.user_is_creator_of_task + "]-(" + creator_ref + ")\n")
 
     def set_assignee_of_task(self, task_ref, assignee_ref):
-        self.query_builder.write("CREATE (" + task_ref + ")-[:" + TaskRelation.user_is_assigned_to_task + "]->(" + assignee_ref + ")\n")
+        self.query_builder.write("CREATE (" + task_ref + ")<-[:" + TaskRelation.user_is_assigned_to_task + "]-(" + assignee_ref + ")\n")

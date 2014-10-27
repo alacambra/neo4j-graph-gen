@@ -70,168 +70,206 @@ class Connection:
 connection = Connection().create()
 
 
-def create_channel(total_items=10):
-    query_builder = StringIO.StringIO()
+class ChannelManager:
 
-    channel_gen = Entities.Channel(query_builder)
-    channel_items_rel_gen = Entities.ChannelItemsRelation(query_builder)
-    user_gen = Entities.User(query_builder, "CH_O_U")
-    items_gen = Entities.ChannelItem(query_builder)
+    def __init__(self):
+        pass
 
-    channel_creator_ref = user_gen.create_user()
-    channel_ref, channel_uuid = channel_gen.create_channel()
-    channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref)
+    def create_channel(total_items=10):
+        query_builder = StringIO.StringIO()
 
-    first_item, first_channel_item_uuid = items_gen.create_channel_item()
-    channel_items_rel_gen.set_first_item(channel_ref, first_item)
+        channel_gen = Entities.Channel(query_builder)
+        channel_items_rel_gen = Entities.ChannelItemsRelation(query_builder)
+        user_gen = Entities.User(query_builder, "CH_O_U")
+        items_gen = Entities.ChannelItem(query_builder)
 
-    second_item = None
+        channel_creator_ref = user_gen.create_user()
+        channel_ref, channel_uuid = channel_gen.create_channel()
+        channel_items_rel_gen.set_channel_owner(channel_ref, channel_creator_ref)
 
-    step = 20
+        first_item, first_channel_item_uuid = items_gen.create_channel_item()
+        channel_items_rel_gen.set_first_item(channel_ref, first_item)
 
-    for i in range(0, total_items - 1):
+        second_item = None
 
-        if i % step == 0 and i != 0:
-            print "-" * 50 + str(i)
-            execute(query_builder.getvalue())
-            connection.commit()
+        step = 20
 
-            query_builder.truncate(0)
-            query_builder.seek(0)
+        for i in range(0, total_items - 1):
 
-            query_builder.write("match (last:" + Label.uuid + " {" + Label.uuid + ":'" + last_channel_item_uuid + "'})")
-            second_item = "last"
+            if i % step == 0 and i != 0:
+                print "-" * 50 + str(i)
+                execute(query_builder.getvalue())
+                connection.commit()
 
-        if second_item is not None:
-            first_item = second_item
+                query_builder.truncate(0)
+                query_builder.seek(0)
 
-        second_item, last_channel_item_uuid = items_gen.create_channel_item(Label.bce if i % 4 else Label.container)
-        channel_items_rel_gen.connect_items(first_item, second_item)
+                query_builder.write("match (last:" + Label.uuid + " {" + Label.uuid + ":'" + last_channel_item_uuid + "'})")
+                second_item = "last"
 
-    execute(query_builder.getvalue())
-    connection.commit()
+            if second_item is not None:
+                first_item = second_item
 
-    query_builder.truncate(0)
-    query_builder.seek(0)
+            second_item, last_channel_item_uuid = items_gen.create_channel_item(Label.bce if i % 4 else Label.container)
+            channel_items_rel_gen.connect_items(first_item, second_item)
 
-    channel_query = "MATCH (channel: " + Label.uuid + " {" + Label.uuid + ":'" + channel_uuid + "'}), (last:" \
-                    + Label.uuid + " {" + Label.uuid + ":'" + last_channel_item_uuid + "'})\n"
-    query_builder.write(channel_query)
-    channel_items_rel_gen.set_last_item("channel", "last")
+        execute(query_builder.getvalue())
+        connection.commit()
 
-    i = 0
-    print "-" * 50 + str(i)
-    execute(query_builder.getvalue())
-    connection.commit()
+        query_builder.truncate(0)
+        query_builder.seek(0)
+
+        channel_query = "MATCH (channel: " + Label.uuid + " {" + Label.uuid + ":'" + channel_uuid + "'}), (last:" \
+                        + Label.uuid + " {" + Label.uuid + ":'" + last_channel_item_uuid + "'})\n"
+        query_builder.write(channel_query)
+        channel_items_rel_gen.set_last_item("channel", "last")
+
+        i = 0
+        print "-" * 50 + str(i)
+        execute(query_builder.getvalue())
+        connection.commit()
 
 
 def create_tasks(total_tasks=10):
     pass
 
 
-def create_complex_private_sphere(total_tasks=10, total_users=10, roll_nodes=True):
-    step = 100
-    tasks_uuids = []
-    users_uuids = []
-
+def create_users_with_tasks(total_tasks=10):
     query_builder = StringIO.StringIO()
-    task_gen = Entities.Task(query_builder)
-    private_sphere_relations = Entities.PrivateSphereRelations(query_builder)
-    stepped_insertion(query_builder, total_tasks, step, task_gen.create_task, tasks_uuids)
+    tasks_gen = Entities.Task(query_builder)
+    users_gen = Entities.User(query_builder)
+    user_task_rel = Entities.UserTaskRelation(query_builder)
+    # users_gen.create_user()
+    # tasks_gen.create_task()
+    user_task_rel.set_creator_of_task(tasks_gen.create_task()[0], users_gen.create_user()[0])
+    execute(query_builder.getvalue())
+    connection.commit()
 
-    print "-" * 5 + " linking objects (wait)" + "-" * 50
-    j = 0
-    per_cent = 0
-    per_cent_step = math.ceil(float(len(tasks_uuids)) / 5)
-    total_done = 0
 
-    for task_origin_uuid in tasks_uuids:
+class ChannelManager:
 
-        done = []
+    def __init__(self):
+        pass
 
-        for i in range(0, 10):
+    def create_complex_private_sphere(self, total_tasks=10, total_users=10, use_roll_nodes=True):
+        step = 100
+        tasks_uuids = []
+        users_uuids = []
 
-            task_target_uuid = tasks_uuids[random.randint(0, len(tasks_uuids) - 1)]
+        query_builder = StringIO.StringIO()
+        task_gen = Entities.Task(query_builder)
+        private_sphere_relations = Entities.PrivateSphereRelations(query_builder)
+        self.stepped_insertion(query_builder, total_tasks, step, task_gen.create_task, tasks_uuids)
 
-            if task_target_uuid == task_origin_uuid or task_target_uuid in done:
-                continue
+        print "-" * 5 + " linking objects (wait)" + "-" * 50
+        j = 0
+        per_cent = 0
+        per_cent_step = math.ceil(float(len(tasks_uuids)) / 5)
+        total_done = 0
 
-            done.append(task_target_uuid)
+        for task_origin_uuid in tasks_uuids:
 
-            if roll_nodes:
-                private_sphere_relations. \
-                    link_object(
-                        task_origin_uuid,
-                        task_target_uuid,
-                        blacklisted=["observer"],
-                        rolls=["assignee", "observer", "owner"],
-                        roll_nodes=True)
+            done = []
+
+            for i in range(0, 10):
+
+                task_target_uuid = tasks_uuids[random.randint(0, len(tasks_uuids) - 1)]
+
+                if task_target_uuid == task_origin_uuid or task_target_uuid in done:
+                    continue
+
+                done.append(task_target_uuid)
+
+                if use_roll_nodes:
+                    private_sphere_relations. \
+                        link_object(
+                            task_origin_uuid,
+                            task_target_uuid,
+                            blacklisted=["observer"],
+                            rolls=["assignee", "observer", "owner"],
+                            use_rolls=True)
+                else:
+                    private_sphere_relations.link_object(task_origin_uuid, task_target_uuid, use_rolls=False)
+
+                if j % 100 == 0:
+                    private_sphere_relations.build_subject_to_object_with_roll_name()
+                    commit_and_restart(query_builder)
+
+                j += 1
+
+            if total_done % per_cent_step == 0:
+                per_cent += 1
+                print str((total_done * 100) / len(tasks_uuids)) + "%"
+
+            total_done += 1
+
+        private_sphere_relations.build_subject_to_object_with_roll_name()
+        commit_and_restart(query_builder)
+
+        print "-" * 5 + " READY: objects linked" + "-" * 50
+
+        user_gen = Entities.User(query_builder)
+        self.stepped_insertion(query_builder, total_users, step, user_gen.create_user, users_uuids)
+
+        query_builder.truncate(0)
+        query_builder.seek(0)
+
+        j = 0
+        print "-" * 5 + "connecting users and tasks" + "-" * 50
+        for task_uuid in tasks_uuids:
+
+            owner_index = random.randint(0, len(users_uuids) - 1)
+            assignee_index = random.randint(0, len(users_uuids) - 1)
+
+            if use_roll_nodes:
+                private_sphere_relations.add_subject_to_object_with_roll_node(
+                    users_uuids[owner_index], task_uuid, "owner")
+
+                private_sphere_relations.add_subject_to_object_with_roll_node(
+                    users_uuids[assignee_index], task_uuid, "assignee")
+
+                for i in range(0, 5):
+                    private_sphere_relations.add_subject_to_object_with_roll_node(
+                        users_uuids[random.randint(0, len(users_uuids) - 1)], task_uuid, "observer")
+
             else:
-                private_sphere_relations.link_object(task_origin_uuid, task_target_uuid, use_rolls=False)
+                private_sphere_relations \
+                    .add_subject_to_object_with_roll_name(users_uuids[owner_index], task_uuid, "owner")
 
-            if j % 100 == 0:
+                private_sphere_relations \
+                    .add_subject_to_object_with_roll_name(users_uuids[assignee_index], task_uuid, "assignee")
+
+                for i in range(0, 5):
+                    private_sphere_relations.add_subject_to_object_with_roll_name(
+                        users_uuids[random.randint(0, len(users_uuids) - 1)], task_uuid, "observer")
+
+            if j % 3 == 0:
                 private_sphere_relations.build_subject_to_object_with_roll_name()
                 commit_and_restart(query_builder)
 
             j += 1
 
-        if total_done % per_cent_step == 0:
-            per_cent += 1
-            print str((total_done * 100) / len(tasks_uuids)) + "%"
+        print "-" * 5 + "READY: users and tasks connected" + "-" * 50
+        private_sphere_relations.build_subject_to_object_with_roll_name()
+        commit_and_restart(query_builder)
 
-        total_done += 1
+        print "all_done"
 
-    private_sphere_relations.build_subject_to_object_with_roll_name()
-    commit_and_restart(query_builder)
+    @staticmethod
+    def stepped_insertion(query_builder, total_items, step, creation_method, uuids=[]):
+        for i in range(0, total_items):
 
-    print "-" * 5 + " READY: objects linked" + "-" * 50
+            uuids.append(creation_method()[1])
 
-    user_gen = Entities.User(query_builder)
-    stepped_insertion(query_builder, total_users, step, user_gen.create_user, users_uuids)
+            if i % step == 0 and i != 0:
+                print "-" * 50 + str(i)
+                execute(query_builder.getvalue())
+                connection.commit()
 
-    query_builder.truncate(0)
-    query_builder.seek(0)
+                query_builder.truncate(0)
+                query_builder.seek(0)
 
-    j = 0
-    print "-" * 5 + "connecting users and tasks" + "-" * 50
-    for task_uuid in tasks_uuids:
-
-        owner_index = random.randint(0, len(users_uuids) - 1)
-        assignee_index = random.randint(0, len(users_uuids) - 1)
-
-        if roll_nodes:
-            private_sphere_relations.add_subject_to_object_with_roll_node(
-                users_uuids[owner_index], task_uuid, "owner")
-
-            private_sphere_relations.add_subject_to_object_with_roll_node(
-                users_uuids[assignee_index], task_uuid, "assignee")
-
-            for i in range(0, 5):
-                private_sphere_relations.add_subject_to_object_with_roll_node(
-                    users_uuids[random.randint(0, len(users_uuids) - 1)], task_uuid, "observer")
-
-        else:
-            private_sphere_relations \
-                .add_subject_to_object_with_roll_name(users_uuids[owner_index], task_uuid, "owner")
-
-            private_sphere_relations \
-                .add_subject_to_object_with_roll_name(users_uuids[assignee_index], task_uuid, "assignee")
-
-            for i in range(0, 5):
-                private_sphere_relations.add_subject_to_object_with_roll_name(
-                    users_uuids[random.randint(0, len(users_uuids) - 1)], task_uuid, "observer")
-
-        if j % 3 == 0:
-            private_sphere_relations.build_subject_to_object_with_roll_name()
-            commit_and_restart(query_builder)
-
-        j += 1
-
-    print "-" * 5 + "READY: users and tasks connected" + "-" * 50
-    private_sphere_relations.build_subject_to_object_with_roll_name()
-    commit_and_restart(query_builder)
-
-    print "all_done"
+        commit_and_restart(query_builder)
 
 
 def commit_and_restart(query_builder):
@@ -242,22 +280,6 @@ def commit_and_restart(query_builder):
     connection.commit()
     query_builder.truncate(0)
     query_builder.seek(0)
-
-
-def stepped_insertion(query_builder, total_items, step, creation_method, uuids=[]):
-    for i in range(0, total_items):
-
-        uuids.append(creation_method()[1])
-
-        if i % step == 0 and i != 0:
-            print "-" * 50 + str(i)
-            execute(query_builder.getvalue())
-            connection.commit()
-
-            query_builder.truncate(0)
-            query_builder.seek(0)
-
-    commit_and_restart(query_builder)
 
 
 def clear_all():
@@ -291,8 +313,8 @@ def execute(query):
 
 if __name__ == "__main__":
     print "hello"
-    # clear_all();
+    clear_all();
     # for i in range(0, 1):
     # create_channel()
 
-    create_simple_private_sphere()
+    create_users_with_tasks()
